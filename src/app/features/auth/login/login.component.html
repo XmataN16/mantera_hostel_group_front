@@ -1,0 +1,47 @@
+<div class="login-container">
+  <div class="login-box">
+    <h1>Mantera Hostel Group</h1>
+    <h2>Вход в систему</h2>
+
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+      <div class="form-group">
+        <label for="username">Логин</label>
+        <input
+          type="text"
+          id="username"
+          [(ngModel)]="credentials.username"
+          name="username"
+          required
+          placeholder="Введите логин"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Пароль</label>
+        <input
+          type="password"
+          id="password"
+          [(ngModel)]="credentials.password"
+          name="password"
+          required
+          placeholder="Введите пароль"
+        />
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-message">{{ errorMessage() }}</div>
+      }
+
+      <button type="submit" [disabled]="isLoading()">
+        {{ isLoading() ? 'Вход...' : 'Войти' }}
+      </button>
+    </form>
+
+    <div class="demo-credentials">
+      <p><strong>Демо-доступ:</strong></p>
+      <p>admin / admin123</p>
+      <p>manager / manager123</p>
+      <p>reception / reception123</p>
+    </div>
+  </div>
+</div>
