@@ -1,0 +1,79 @@
+<div class="hotels-container">
+  <div class="header">
+    <h2>Справочник отелей</h2>
+    <button pButton label="Добавить отель" icon="pi pi-plus" (click)="openDialog()"></button>
+  </div>
+
+  <!-- Таблица PrimeNG -->
+  <p-table [value]="hotels()" [loading]="isLoading()" styleClass="p-datatable-gridlines" responsiveLayout="scroll">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>ID</th>
+        <th>Название</th>
+        <th>Короткое имя</th>
+        <th>Адрес</th>
+        <th>Телефон</th>
+        <th>Email</th>
+        <th>Статус</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-hotel>
+      <tr>
+        <td>{{ hotel.id }}</td>
+        <td>{{ hotel.name }}</td>
+        <td>{{ hotel.shortName }}</td>
+        <td>{{ hotel.address }}</td>
+        <td>{{ hotel.phone }}</td>
+        <td>{{ hotel.email }}</td>
+        <td>
+          <span [class]="'status-badge status-' + hotel.status.toLowerCase()">
+            {{ hotel.status === 'ACTIVE' ? 'Активен' : 'Неактивен' }}
+          </span>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" style="text-align: center;">Отели не найдены. Добавьте первый!</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Модальное окно создания -->
+  <p-dialog
+    [visible]="displayDialog()"
+    (visibleChange)="displayDialog.set($event)"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    header="Новый отель"
+    [closable]="true">
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="name">Название *</label>
+        <input id="name" type="text" pInputText [(ngModel)]="newHotel.name" class="w-full" />
+      </div>
+      <div class="field">
+        <label for="shortName">Короткое имя</label>
+        <input id="shortName" type="text" pInputText [(ngModel)]="newHotel.shortName" class="w-full" />
+      </div>
+      <div class="field">
+        <label for="address">Адрес *</label>
+        <input id="address" type="text" pInputText [(ngModel)]="newHotel.address" class="w-full" />
+      </div>
+      <div class="field">
+        <label for="phone">Телефон</label>
+        <input id="phone" type="text" pInputText [(ngModel)]="newHotel.phone" class="w-full" />
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="text" pInputText [(ngModel)]="newHotel.email" class="w-full" />
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton label="Отмена" icon="pi pi-times" [text]="true" (click)="displayDialog.set(false)"></button>
+      <button pButton label="Сохранить" icon="pi pi-check" (click)="saveHotel()"></button>
+    </ng-template>
+  </p-dialog>
+</div>
