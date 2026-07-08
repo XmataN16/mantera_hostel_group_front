@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 import { LoginComponent } from './features/auth/login/login.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
@@ -52,6 +53,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/guests/guests.component')
             .then(m => m.GuestsComponent)
+      },
+      {
+        path: 'reports',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER', 'ACCOUNTANT'])],
+        loadComponent: () =>
+          import('./features/reports/reports.component')
+            .then(m => m.ReportsComponent)
       }
     ]
   },

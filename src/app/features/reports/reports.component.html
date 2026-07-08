@@ -1,0 +1,313 @@
+<div class="reports-container">
+  <div class="page-header">
+    <div>
+      <h2>Отчёты</h2>
+      <p>Аналитика загрузки, заездов, выручки, задолженностей и структуры спроса</p>
+    </div>
+
+    <button
+      pButton
+      type="button"
+      label="Обновить"
+      icon="pi pi-refresh"
+      [loading]="isLoading()"
+      (click)="loadReports()">
+    </button>
+  </div>
+
+  <div class="filters-panel">
+    <div class="field hotel-field">
+      <label for="hotelId">Отель</label>
+      <p-dropdown
+        inputId="hotelId"
+        [options]="hotels()"
+        [ngModel]="selectedHotelId()"
+        (ngModelChange)="selectedHotelId.set($event); onHotelChange()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите отель">
+      </p-dropdown>
+    </div>
+
+    <div class="field">
+      <label for="reportDate">Дата для загрузки и заездов</label>
+      <input
+        id="reportDate"
+        type="date"
+        pInputText
+        [ngModel]="reportDate()"
+        (ngModelChange)="reportDate.set($event)" />
+    </div>
+
+    <div class="field">
+      <label for="fromDate">Начало периода</label>
+      <input
+        id="fromDate"
+        type="date"
+        pInputText
+        [ngModel]="fromDate()"
+        (ngModelChange)="fromDate.set($event)" />
+    </div>
+
+    <div class="field">
+      <label for="toDate">Конец периода</label>
+      <input
+        id="toDate"
+        type="date"
+        pInputText
+        [ngModel]="toDate()"
+        (ngModelChange)="toDate.set($event)" />
+    </div>
+
+    <div class="filter-actions">
+      <button
+        pButton
+        type="button"
+        label="Сегодня"
+        severity="secondary"
+        icon="pi pi-calendar"
+        (click)="setToday()">
+      </button>
+
+      <button
+        pButton
+        type="button"
+        label="Текущий месяц"
+        severity="secondary"
+        icon="pi pi-calendar-plus"
+        (click)="setCurrentMonth()">
+      </button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="error-message">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="report-title-card">
+    <div>
+      <strong>{{ getSelectedHotelName() }}</strong>
+      <span>Дата отчёта: {{ formatDate(reportDate()) }}</span>
+      <span>Период: {{ formatDate(fromDate()) }} — {{ formatDate(toDate()) }}</span>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="card-label">Загрузка</div>
+      <div class="card-value">
+        {{ formatPercent(occupancyReport()?.occupancyPercent) }}
+      </div>
+      <p-tag
+        [value]="occupancyReport()?.occupiedRooms + ' занято / ' + occupancyReport()?.totalRooms + ' всего'"
+        [severity]="getOccupancySeverity()">
+      </p-tag>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-label">Свободно номеров</div>
+      <div class="card-value">
+        {{ occupancyReport()?.availableRooms || 0 }}
+      </div>
+      <span class="card-note">
+        Недоступно: {{ occupancyReport()?.maintenanceRooms || 0 }}
+      </span>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-label">Заезды / выезды</div>
+      <div class="card-value">
+        {{ checkInOutReport()?.checkIns || 0 }} / {{ checkInOutReport()?.checkOuts || 0 }}
+      </div>
+      <span class="card-note">На выбранную дату</span>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-label">Выручка за период</div>
+      <div class="card-value money">
+        {{ formatMoney(revenueReport()?.totalRevenue) }}
+      </div>
+      <span class="card-note">
+        Проживание + услуги
+      </span>
+    </div>
+
+    <div class="summary-card danger">
+      <div class="card-label">Задолженность</div>
+      <div class="card-value money">
+        {{ formatMoney(debtReport()?.totalDebt) }}
+      </div>
+      <span class="card-note">
+        Открытые долги по бронированиям
+      </span>
+    </div>
+  </div>
+
+  <div class="details-grid">
+    <section class="report-card">
+      <div class="section-header">
+        <h3>Загрузка номерного фонда</h3>
+      </div>
+
+      @if (occupancyReport()) {
+        <div class="occupancy-box">
+          <div class="occupancy-percent">
+            {{ formatPercent(occupancyReport()!.occupancyPercent) }}
+          </div>
+
+          <div class="occupancy-bar">
+            <div
+              class="occupancy-fill"
+              [style.width.%]="occupancyReport()!.occupancyPercent">
+            </div>
+          </div>
+
+          <div class="occupancy-rows">
+            <div>
+              <span>Всего номеров</span>
+              <strong>{{ occupancyReport()!.totalRooms }}</strong>
+            </div>
+
+            <div>
+              <span>Занято проживающими</span>
+              <strong>{{ occupancyReport()!.occupiedRooms }}</strong>
+            </div>
+
+            <div>
+              <span>Забронировано</span>
+              <strong>{{ occupancyReport()!.bookedRooms }}</strong>
+            </div>
+
+            <div>
+              <span>Свободно</span>
+              <strong>{{ occupancyReport()!.availableRooms }}</strong>
+            </div>
+
+            <div>
+              <span>Ремонт / недоступно</span>
+              <strong>{{ occupancyReport()!.maintenanceRooms }}</strong>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-state">Нет данных по загрузке</div>
+      }
+    </section>
+
+    <section class="report-card">
+      <div class="section-header">
+        <h3>Выручка</h3>
+      </div>
+
+      @if (revenueReport()) {
+        <div class="revenue-list">
+          <div>
+            <span>Проживание</span>
+            <strong>{{ formatMoney(revenueReport()!.accommodationRevenue) }}</strong>
+          </div>
+
+          <div>
+            <span>Дополнительные услуги</span>
+            <strong>{{ formatMoney(revenueReport()!.servicesRevenue) }}</strong>
+          </div>
+
+          <div class="total">
+            <span>Итого</span>
+            <strong>{{ formatMoney(revenueReport()!.totalRevenue) }}</strong>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-state">Нет данных по выручке</div>
+      }
+    </section>
+  </div>
+
+  <div class="details-grid">
+    <section class="report-card">
+      <div class="section-header">
+        <h3>Распределение по категориям номеров</h3>
+      </div>
+
+      @if (roomTypeDistribution().length > 0) {
+        <div class="distribution-list">
+          @for (item of roomTypeDistribution(); track item.roomTypeId) {
+            <div class="distribution-item">
+              <div class="distribution-label">
+                <strong>{{ item.roomTypeName }}</strong>
+                <span>{{ item.staysCount }} проживаний</span>
+              </div>
+
+              <div class="distribution-bar">
+                <div
+                  class="distribution-fill"
+                  [style.width.%]="getDistributionPercent(item)">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">Нет данных по категориям</div>
+      }
+    </section>
+
+    <section class="report-card">
+      <div class="section-header">
+        <h3>Задолженности</h3>
+      </div>
+
+      <p-table
+        [value]="debtReport()?.items || []"
+        [loading]="isLoading()"
+        styleClass="p-datatable-gridlines"
+        responsiveLayout="scroll"
+        [paginator]="true"
+        [rows]="5"
+        [rowsPerPageOptions]="[5, 10, 20]">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Бронь</th>
+            <th>Даты</th>
+            <th>Сумма</th>
+            <th>Оплачено</th>
+            <th>Долг</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td>
+              <strong>{{ item.reservationNumber }}</strong>
+              <div class="muted">ID гостя: {{ item.guestId }}</div>
+            </td>
+
+            <td>
+              <div>{{ formatDate(item.checkInDate) }}</div>
+              <div class="muted">до {{ formatDate(item.checkOutDate) }}</div>
+            </td>
+
+            <td>{{ formatMoney(item.totalAmount) }}</td>
+            <td>{{ formatMoney(item.paidAmount) }}</td>
+
+            <td>
+              <strong class="debt-value">
+                {{ formatMoney(item.debtAmount) }}
+              </strong>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" class="empty-state">
+              Задолженности не найдены
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+  </div>
+</div>
