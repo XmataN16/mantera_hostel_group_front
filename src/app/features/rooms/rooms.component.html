@@ -1,0 +1,142 @@
+<div class="rooms-container">
+  <div class="header">
+    <h2>Номерной фонд</h2>
+    <div class="actions">
+      <p-dropdown
+        [options]="hotels()"
+        [(ngModel)]="selectedHotelId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Все отели"
+        [showClear]="true"
+        (onChange)="onHotelFilterChange()"
+        styleClass="hotel-filter">
+      </p-dropdown>
+      <button pButton label="Добавить номер" icon="pi pi-plus" (click)="openDialog()"></button>
+    </div>
+  </div>
+
+  <p-table
+    [value]="rooms()"
+    [loading]="isLoading()"
+    styleClass="p-datatable-gridlines"
+    responsiveLayout="scroll"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[10, 25, 50]">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Номер</th>
+        <th>Отель</th>
+        <th>Категория</th>
+        <th>Этаж</th>
+        <th>Статус</th>
+        <th>Состояние</th>
+        <th>Комментарий</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-room>
+      <tr>
+        <td><strong>{{ room.roomNumber }}</strong></td>
+        <td>{{ room.hotelName }}</td>
+        <td>{{ room.roomTypeName }}</td>
+        <td>{{ room.floor }}</td>
+        <td>
+          <span [class]="'status-badge status-' + room.status.toLowerCase()">
+            {{ getStatusLabel(room.status) }}
+          </span>
+        </td>
+        <td>
+          <span [class]="'housekeeping-badge housekeeping-' + room.housekeepingStatus.toLowerCase()">
+            {{ getHousekeepingLabel(room.housekeepingStatus) }}
+          </span>
+        </td>
+        <td>{{ room.comment || '-' }}</td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" style="text-align: center;">Номера не найдены</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <p-dialog
+    [visible]="displayDialog()"
+    (visibleChange)="displayDialog.set($event)"
+    [modal]="true"
+    [style]="{width: '550px'}"
+    header="Новый номер"
+    [closable]="true">
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="hotel">Отель *</label>
+        <p-dropdown
+          id="hotel"
+          [options]="hotels()"
+          [(ngModel)]="newRoom.hotelId"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Выберите отель"
+          (onChange)="onHotelSelectInForm()"
+          styleClass="w-full">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label for="roomType">Категория номера *</label>
+        <p-dropdown
+          id="roomType"
+          [options]="filteredRoomTypes()"
+          [(ngModel)]="newRoom.roomTypeId"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Выберите категорию"
+          [disabled]="!newRoom.hotelId"
+          styleClass="w-full">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label for="roomNumber">Номер комнаты *</label>
+        <input
+          id="roomNumber"
+          type="text"
+          pInputText
+          [(ngModel)]="newRoom.roomNumber"
+          class="w-full"
+          placeholder="Например: 101, 205A" />
+      </div>
+
+      <div class="field">
+        <label for="floor">Этаж</label>
+        <p-inputNumber
+          id="floor"
+          [(ngModel)]="newRoom.floor"
+          [min]="0"
+          styleClass="w-full">
+        </p-inputNumber>
+      </div>
+
+      <div class="field">
+        <label for="comment">Комментарий</label>
+        <input
+          id="comment"
+          type="text"
+          pInputText
+          [(ngModel)]="newRoom.comment"
+          class="w-full"
+          placeholder="Особенности номера" />
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton label="Отмена" icon="pi pi-times" [text]="true" (click)="displayDialog.set(false)"></button>
+      <button pButton label="Сохранить" icon="pi pi-check" (click)="saveRoom()"></button>
+    </ng-template>
+  </p-dialog>
+</div>

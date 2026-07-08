@@ -5,20 +5,58 @@ import { MainLayoutComponent } from './layout/main-layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  {
+    path: 'login',
+    component: LoginComponent
+  },
   {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: DashboardComponent },
-      // <-- ДОБАВЬ ЭТУ СТРОКУ:
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
+      {
+        path: 'dashboard',
+        component: DashboardComponent
+      },
       {
         path: 'hotels',
-        loadComponent: () => import('./features/hotels/hotels.component').then(m => m.HotelsComponent)
+        loadComponent: () =>
+          import('./features/hotels/hotels.component')
+            .then(m => m.HotelsComponent)
       },
+      {
+        path: 'rooms',
+        loadComponent: () =>
+          import('./features/rooms/rooms.component')
+            .then(m => m.RoomsComponent)
+      },
+      {
+        path: 'reservations/booking-board',
+        loadComponent: () =>
+          import('./features/booking-board/booking-board.component')
+            .then(m => m.BookingBoardComponent)
+      },
+      {
+        path: 'reservations',
+        loadComponent: () =>
+          import('./features/reservations/reservations.component')
+            .then(m => m.ReservationsComponent)
+      },
+      {
+        path: 'guests',
+        loadComponent: () =>
+          import('./features/guests/guests.component')
+            .then(m => m.GuestsComponent)
+      }
     ]
   },
-  { path: '**', redirectTo: '' }
+  {
+    path: '**',
+    redirectTo: ''
+  }
 ];

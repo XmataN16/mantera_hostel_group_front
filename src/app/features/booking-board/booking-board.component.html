@@ -1,0 +1,188 @@
+<div class="booking-board-container">
+  <div class="page-header">
+    <div>
+      <h2>Шахматка бронирований</h2>
+      <p>Визуальный календарь занятости номерного фонда</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-chevron-left"
+        label="Назад"
+        severity="secondary"
+        (click)="shiftPeriod(-14)">
+      </button>
+
+      <button
+        pButton
+        type="button"
+        icon="pi pi-calendar"
+        label="Сегодня"
+        severity="secondary"
+        (click)="setTodayPeriod()">
+      </button>
+
+      <button
+        pButton
+        type="button"
+        icon="pi pi-chevron-right"
+        label="Вперёд"
+        severity="secondary"
+        (click)="shiftPeriod(14)">
+      </button>
+    </div>
+  </div>
+
+  <div class="filters-panel">
+    <div class="field">
+      <label for="hotelId">Отель</label>
+      <p-dropdown
+        inputId="hotelId"
+        [options]="hotels()"
+        [ngModel]="selectedHotelId()"
+        (ngModelChange)="selectedHotelId.set($event); onHotelChange()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите отель"
+        styleClass="hotel-select">
+      </p-dropdown>
+    </div>
+
+    <div class="field">
+      <label for="fromDate">Дата начала</label>
+      <input
+        id="fromDate"
+        type="date"
+        pInputText
+        [ngModel]="fromDate()"
+        (ngModelChange)="fromDate.set($event); onPeriodChange()" />
+    </div>
+
+    <div class="field">
+      <label for="toDate">Дата окончания</label>
+      <input
+        id="toDate"
+        type="date"
+        pInputText
+        [ngModel]="toDate()"
+        (ngModelChange)="toDate.set($event); onPeriodChange()" />
+    </div>
+
+    <button
+      pButton
+      type="button"
+      label="Показать"
+      icon="pi pi-search"
+      [loading]="isLoading()"
+      (click)="loadBoard()">
+    </button>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="error-message">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="legend">
+    <div class="legend-item">
+      <span class="legend-color available"></span>
+      <span>Свободно</span>
+    </div>
+
+    <div class="legend-item">
+      <span class="legend-color created"></span>
+      <span>Создано</span>
+    </div>
+
+    <div class="legend-item">
+      <span class="legend-color confirmed"></span>
+      <span>Подтверждено</span>
+    </div>
+
+    <div class="legend-item">
+      <span class="legend-color checked-in"></span>
+      <span>Заселён</span>
+    </div>
+
+    <div class="legend-item">
+      <span class="legend-color cancelled"></span>
+      <span>Отменено / недоступно</span>
+    </div>
+  </div>
+
+  <div class="board-card">
+    <div class="board-title">
+      <div>
+        <strong>{{ getSelectedHotelName() }}</strong>
+        <span class="muted">
+          Период: {{ fromDate() }} — {{ toDate() }}
+        </span>
+      </div>
+
+      <p-tag
+        [value]="rows().length + ' номеров'"
+        severity="info">
+      </p-tag>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        Загрузка шахматки...
+      </div>
+    } @else if (rows().length === 0) {
+      <div class="empty-state">
+        Нет данных для отображения. Выберите отель и период, затем нажмите “Показать”.
+      </div>
+    } @else {
+      <div class="board-scroll">
+        <table class="booking-board">
+          <thead>
+            <tr>
+              <th class="room-header">Номер</th>
+
+              @for (date of dates(); track date) {
+                <th
+                  class="date-header"
+                  [class.weekend]="isWeekend(date)">
+                  <div>{{ formatDateHeader(date) }}</div>
+                  <small>{{ formatWeekday(date) }}</small>
+                </th>
+              }
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (row of rows(); track row.roomId) {
+              <tr>
+                <td class="room-cell">
+                  № {{ row.roomNumber }}
+                </td>
+
+                @for (cell of row.cells; track cell.date) {
+                  <td
+                    [class]="getCellClass(cell)"
+                    [title]="getCellTitle(cell)">
+
+                    @if (isReservedCell(cell)) {
+                      <div class="reservation-content">
+                        <strong>{{ getShortCellText(cell) }}</strong>
+                        <small>{{ getStatusLabel(cell.status) }}</small>
+                      </div>
+                    } @else {
+                      <span class="empty-cell-text">
+                        {{ getShortCellText(cell) }}
+                      </span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

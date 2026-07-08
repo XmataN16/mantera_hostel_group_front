@@ -1,0 +1,389 @@
+<div class="guests-container">
+  <div class="page-header">
+    <div>
+      <h2>Гости</h2>
+      <p>Справочник гостей, паспортные данные и история проживаний</p>
+    </div>
+
+    <button
+      pButton
+      type="button"
+      label="Добавить гостя"
+      icon="pi pi-plus"
+      (click)="openCreateDialog()">
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <span class="search-box">
+      <i class="pi pi-search"></i>
+      <input
+        type="text"
+        pInputText
+        placeholder="Поиск по ФИО, телефону, email или документу"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)" />
+    </span>
+
+    <button
+      pButton
+      type="button"
+      label="Обновить"
+      icon="pi pi-refresh"
+      severity="secondary"
+      (click)="loadGuests()">
+    </button>
+  </div>
+
+  <p-table
+    [value]="filteredGuests()"
+    [loading]="isLoading()"
+    styleClass="p-datatable-gridlines"
+    responsiveLayout="scroll"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[10, 25, 50]">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Гость</th>
+        <th>Дата рождения</th>
+        <th>Пол</th>
+        <th>Контакты</th>
+        <th>Документ</th>
+        <th>Гражданство</th>
+        <th>Комментарий</th>
+        <th>Действия</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-guest>
+      <tr>
+        <td>
+          <strong>{{ getGuestFullName(guest) }}</strong>
+          <div class="muted">ID {{ guest.id }}</div>
+        </td>
+
+        <td>{{ formatDate(guest.birthDate) }}</td>
+
+        <td>{{ getGenderLabel(guest.gender) }}</td>
+
+        <td>
+          <div>{{ guest.phone || '-' }}</div>
+          <div class="muted">{{ guest.email || 'Email не указан' }}</div>
+        </td>
+
+        <td>
+          <div>{{ getDocumentTypeLabel(guest.documentType) }}</div>
+          <div class="muted">{{ guest.documentNumber }}</div>
+        </td>
+
+        <td>{{ guest.citizenship || '-' }}</td>
+
+        <td>{{ guest.comment || '-' }}</td>
+
+        <td>
+          <div class="actions">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-history"
+              label="История"
+              size="small"
+              severity="info"
+              (click)="openHistoryDialog(guest)">
+            </button>
+
+            <button
+              pButton
+              type="button"
+              icon="pi pi-pencil"
+              label="Изменить"
+              size="small"
+              severity="warning"
+              (click)="openEditDialog(guest)">
+            </button>
+
+            <button
+              pButton
+              type="button"
+              icon="pi pi-trash"
+              label="Удалить"
+              size="small"
+              severity="danger"
+              (click)="deleteGuest(guest)">
+            </button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="empty-message">
+          Гости не найдены
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [visible]="displayDialog()"
+  (visibleChange)="displayDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '760px' }"
+  [header]="isEditMode() ? 'Редактирование гостя' : 'Новый гость'"
+  [closable]="true">
+
+  <div class="guest-form">
+    <div class="form-row">
+      <div class="field">
+        <label for="lastName">Фамилия *</label>
+        <input
+          id="lastName"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.lastName"
+          placeholder="Например: Иванов" />
+      </div>
+
+      <div class="field">
+        <label for="firstName">Имя *</label>
+        <input
+          id="firstName"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.firstName"
+          placeholder="Например: Иван" />
+      </div>
+
+      <div class="field">
+        <label for="middleName">Отчество</label>
+        <input
+          id="middleName"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.middleName"
+          placeholder="Например: Иванович" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="birthDate">Дата рождения *</label>
+        <input
+          id="birthDate"
+          type="date"
+          pInputText
+          [(ngModel)]="guestForm.birthDate" />
+      </div>
+
+      <div class="field">
+        <label for="gender">Пол *</label>
+        <p-dropdown
+          inputId="gender"
+          [options]="genderOptions"
+          [(ngModel)]="guestForm.gender"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Выберите пол">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label for="citizenship">Гражданство</label>
+        <input
+          id="citizenship"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.citizenship"
+          placeholder="Россия" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="phone">Телефон</label>
+        <input
+          id="phone"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.phone"
+          placeholder="+7 900 000-00-00" />
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          pInputText
+          [(ngModel)]="guestForm.email"
+          placeholder="guest@example.ru" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="documentType">Тип документа *</label>
+        <p-dropdown
+          inputId="documentType"
+          [options]="documentTypeOptions"
+          [(ngModel)]="guestForm.documentType"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Выберите тип документа">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label for="documentNumber">Номер документа *</label>
+        <input
+          id="documentNumber"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.documentNumber"
+          placeholder="4500123456" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="documentIssueDate">Дата выдачи</label>
+        <input
+          id="documentIssueDate"
+          type="date"
+          pInputText
+          [(ngModel)]="guestForm.documentIssueDate" />
+      </div>
+
+      <div class="field">
+        <label for="documentIssuedBy">Кем выдан</label>
+        <input
+          id="documentIssuedBy"
+          type="text"
+          pInputText
+          [(ngModel)]="guestForm.documentIssuedBy"
+          placeholder="ОВД / МВД / УФМС" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="address">Адрес</label>
+      <input
+        id="address"
+        type="text"
+        pInputText
+        [(ngModel)]="guestForm.address"
+        placeholder="Город, улица, дом, квартира" />
+    </div>
+
+    <div class="field">
+      <label for="comment">Комментарий</label>
+      <textarea
+        id="comment"
+        rows="3"
+        [(ngModel)]="guestForm.comment"
+        placeholder="Например: постоянный гость, нужен тихий номер">
+      </textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="closeDialog()">
+    </button>
+
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-save"
+      [loading]="isSaving()"
+      (click)="saveGuest()">
+    </button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [visible]="displayHistoryDialog()"
+  (visibleChange)="displayHistoryDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+  header="История проживаний"
+  [closable]="true">
+
+  @if (selectedGuestForHistory()) {
+    <div class="history-header">
+      <strong>{{ getGuestFullName(selectedGuestForHistory()!) }}</strong>
+      <span class="muted">
+        Документ: {{ selectedGuestForHistory()!.documentNumber }}
+      </span>
+    </div>
+  }
+
+  <p-table
+    [value]="history()"
+    [loading]="isHistoryLoading()"
+    styleClass="p-datatable-gridlines"
+    responsiveLayout="scroll">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Бронь</th>
+        <th>Отель</th>
+        <th>Даты</th>
+        <th>Статус</th>
+        <th>Сумма</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+      <tr>
+        <td>
+          <strong>{{ item.reservationNumber }}</strong>
+          <div class="muted">ID {{ item.reservationId }}</div>
+        </td>
+
+        <td>ID {{ item.hotelId }}</td>
+
+        <td>
+          <div>{{ formatDate(item.checkInDate) }}</div>
+          <div class="muted">до {{ formatDate(item.checkOutDate) }}</div>
+        </td>
+
+        <td>
+          <p-tag
+            [value]="getStatusLabel(item.status)"
+            [severity]="getStatusSeverity(item.status)">
+          </p-tag>
+        </td>
+
+        <td>{{ formatMoney(item.totalAmount) }}</td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5" class="empty-message">
+          История проживаний отсутствует
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Закрыть"
+      severity="secondary"
+      (click)="closeHistoryDialog()">
+    </button>
+  </ng-template>
+</p-dialog>

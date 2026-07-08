@@ -1,0 +1,151 @@
+.guests-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: #7f8c8d;
+  }
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+
+  .search-box {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+
+    i {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7f8c8d;
+    }
+
+    input {
+      width: 100%;
+      padding-left: 2.5rem;
+    }
+  }
+}
+
+.muted {
+  margin-top: 0.25rem;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+}
+
+.guest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+
+    &:has(.field:nth-child(3)) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label {
+      font-weight: 600;
+      color: #34495e;
+    }
+
+    input,
+    textarea,
+    p-dropdown {
+      width: 100%;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 1rem;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 1px #3498db;
+      }
+    }
+
+    ::ng-deep .p-dropdown {
+      width: 100%;
+    }
+  }
+}
+
+.history-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+  .page-header,
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar {
+    .search-box {
+      max-width: none;
+    }
+  }
+
+  .guest-form {
+    .form-row,
+    .form-row:has(.field:nth-child(3)) {
+      grid-template-columns: 1fr;
+    }
+  }
+}

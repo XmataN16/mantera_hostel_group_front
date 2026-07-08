@@ -12,6 +12,15 @@ export interface RoomTypeResponse {
   updatedAt: string;
 }
 
+export interface RoomTypeCreateRequest {
+  hotelId: number;
+  code: string;
+  name: string;
+  description?: string;
+  capacity: number;
+  basePrice: number;
+}
+
 export interface RoomResponse {
   id: number;
   hotelId: number;
@@ -25,4 +34,12 @@ export interface RoomResponse {
   comment: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RoomCreateRequest {
+  hotelId: number;
+  roomTypeId: number;
+  roomNumber: string;
+  floor?: number;
+  comment?: string;
 }

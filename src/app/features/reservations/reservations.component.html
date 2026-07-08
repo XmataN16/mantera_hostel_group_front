@@ -1,0 +1,333 @@
+<div class="reservations-container">
+  <div class="page-header">
+    <div>
+      <h2>Бронирования</h2>
+      <p>Управление заявками, заездами, выездами и отменами</p>
+    </div>
+
+    <button
+      pButton
+      type="button"
+      label="Новое бронирование"
+      icon="pi pi-plus"
+      (click)="openCreateDialog()">
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <p-dropdown
+      [options]="hotels()"
+      [ngModel]="selectedHotelFilterId()"
+      (ngModelChange)="onHotelFilterChange($event)"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Все отели"
+      [showClear]="true"
+      styleClass="hotel-filter">
+    </p-dropdown>
+
+    <button
+      pButton
+      type="button"
+      label="Обновить"
+      icon="pi pi-refresh"
+      severity="secondary"
+      (click)="loadReservations()">
+    </button>
+  </div>
+
+  <p-table
+    [value]="getFilteredReservations()"
+    [loading]="isLoading()"
+    styleClass="p-datatable-gridlines"
+    responsiveLayout="scroll"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[10, 25, 50]">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>№ брони</th>
+        <th>Отель</th>
+        <th>Гость</th>
+        <th>Даты</th>
+        <th>Гости</th>
+        <th>Источник</th>
+        <th>Статус</th>
+        <th>Сумма</th>
+        <th>Действия</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-reservation>
+      <tr>
+        <td>
+          <strong>{{ reservation.reservationNumber }}</strong>
+          <div class="muted">ID {{ reservation.id }}</div>
+        </td>
+
+        <td>{{ getHotelName(reservation.hotelId) }}</td>
+
+        <td>{{ getGuestName(reservation.guestId) }}</td>
+
+        <td>
+          <div>{{ reservation.checkInDate }}</div>
+          <div class="muted">до {{ reservation.checkOutDate }}</div>
+        </td>
+
+        <td>
+          {{ reservation.adults }} взр.
+          @if (reservation.children > 0) {
+            <span> / {{ reservation.children }} дет.</span>
+          }
+        </td>
+
+        <td>{{ getSourceLabel(reservation.source) }}</td>
+
+        <td>
+          <p-tag
+            [value]="getStatusLabel(reservation.status)"
+            [severity]="getStatusSeverity(reservation.status)">
+          </p-tag>
+        </td>
+
+        <td>
+          <strong>{{ formatMoney(reservation.totalAmount) }}</strong>
+        </td>
+
+        <td>
+          <div class="actions">
+            @if (canConfirm(reservation)) {
+              <button
+                pButton
+                type="button"
+                icon="pi pi-check"
+                label="Подтвердить"
+                size="small"
+                severity="info"
+                (click)="confirmReservation(reservation)">
+              </button>
+            }
+
+            @if (canCheckIn(reservation)) {
+              <button
+                pButton
+                type="button"
+                icon="pi pi-sign-in"
+                label="Заселить"
+                size="small"
+                severity="success"
+                (click)="checkInReservation(reservation)">
+              </button>
+            }
+
+            @if (canCheckOut(reservation)) {
+              <button
+                pButton
+                type="button"
+                icon="pi pi-sign-out"
+                label="Выселить"
+                size="small"
+                severity="warning"
+                (click)="checkOutReservation(reservation)">
+              </button>
+            }
+
+            @if (canCancel(reservation)) {
+              <button
+                pButton
+                type="button"
+                icon="pi pi-times"
+                label="Отменить"
+                size="small"
+                severity="danger"
+                (click)="cancelReservation(reservation)">
+              </button>
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="empty-message">
+          Бронирования не найдены
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [visible]="displayCreateDialog()"
+  (visibleChange)="displayCreateDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+  header="Новое бронирование"
+  [closable]="true">
+
+  <div class="reservation-form">
+    <div class="form-row">
+      <div class="field">
+        <label for="hotelId">Отель *</label>
+        <p-dropdown
+          inputId="hotelId"
+          [options]="hotels()"
+          [(ngModel)]="newReservation.hotelId"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Выберите отель"
+          (onChange)="onBookingParamsChange()">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label for="guestId">Гость *</label>
+        <p-dropdown
+          inputId="guestId"
+          [options]="guests()"
+          [(ngModel)]="newReservation.guestId"
+          optionLabel="lastName"
+          optionValue="id"
+          placeholder="Выберите гостя">
+          <ng-template pTemplate="selectedItem" let-guest>
+            @if (guest) {
+              <span>
+                {{ guest.lastName }} {{ guest.firstName }} {{ guest.middleName || '' }}
+              </span>
+            }
+          </ng-template>
+
+          <ng-template pTemplate="item" let-guest>
+            <div>
+              <strong>{{ guest.lastName }} {{ guest.firstName }} {{ guest.middleName || '' }}</strong>
+              <div class="muted">{{ guest.phone || 'Телефон не указан' }}</div>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="checkInDate">Дата заезда *</label>
+        <input
+          id="checkInDate"
+          type="date"
+          pInputText
+          [(ngModel)]="newReservation.checkInDate"
+          (change)="onBookingParamsChange()" />
+      </div>
+
+      <div class="field">
+        <label for="checkOutDate">Дата выезда *</label>
+        <input
+          id="checkOutDate"
+          type="date"
+          pInputText
+          [(ngModel)]="newReservation.checkOutDate"
+          (change)="onBookingParamsChange()" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="adults">Взрослые *</label>
+        <p-inputNumber
+          inputId="adults"
+          [(ngModel)]="newReservation.adults"
+          [min]="1"
+          [showButtons]="true">
+        </p-inputNumber>
+      </div>
+
+      <div class="field">
+        <label for="children">Дети</label>
+        <p-inputNumber
+          inputId="children"
+          [(ngModel)]="newReservation.children"
+          [min]="0"
+          [showButtons]="true">
+        </p-inputNumber>
+      </div>
+
+      <div class="field">
+        <label for="source">Источник</label>
+        <p-dropdown
+          inputId="source"
+          [options]="sourceOptions"
+          [(ngModel)]="newReservation.source"
+          optionLabel="label"
+          optionValue="value">
+        </p-dropdown>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="reservationNumber">Номер бронирования</label>
+        <input
+          id="reservationNumber"
+          type="text"
+          pInputText
+          [(ngModel)]="newReservation.reservationNumber"
+          placeholder="Можно оставить пустым" />
+      </div>
+
+      <div class="field">
+        <label for="roomId">Свободный номер *</label>
+        <p-dropdown
+          inputId="roomId"
+          [options]="availableRooms()"
+          [(ngModel)]="selectedRoomId"
+          optionLabel="displayName"
+          optionValue="id"
+          placeholder="Сначала выберите отель и даты"
+          [loading]="isLoadingRooms()">
+        </p-dropdown>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="comment">Комментарий</label>
+      <input
+        id="comment"
+        type="text"
+        pInputText
+        [(ngModel)]="newReservation.comment"
+        placeholder="Например: нужен тихий номер" />
+    </div>
+
+    @if (
+      newReservation.hotelId &&
+      newReservation.checkInDate &&
+      newReservation.checkOutDate &&
+      availableRooms().length === 0 &&
+      !isLoadingRooms()
+    ) {
+      <div class="warning-message">
+        Свободные номера на выбранные даты не найдены.
+      </div>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="closeCreateDialog()">
+    </button>
+
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-save"
+      [loading]="isSaving()"
+      (click)="saveReservation()">
+    </button>
+  </ng-template>
+</p-dialog>
