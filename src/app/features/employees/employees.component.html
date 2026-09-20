@@ -1,0 +1,193 @@
+<app-page-header
+  title="Сотрудники"
+  subtitle="Справочник сотрудников отелей">
+  <button
+    pButton
+    type="button"
+    label="Добавить сотрудника"
+    icon="pi pi-plus"
+    (click)="openCreateDialog()">
+  </button>
+</app-page-header>
+
+<div class="toolbar">
+  <div class="field">
+    <label for="hotelId">Отель</label>
+    <p-dropdown
+      inputId="hotelId"
+      [options]="hotels()"
+      [ngModel]="selectedHotelId()"
+      (ngModelChange)="selectedHotelId.set($event); onHotelChange()"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Все отели"
+      [showClear]="true"
+      styleClass="w-full">
+    </p-dropdown>
+  </div>
+  <button
+    pButton
+    type="button"
+    label="Обновить"
+    icon="pi pi-refresh"
+    severity="secondary"
+    (click)="loadEmployees()">
+  </button>
+</div>
+
+<p-table
+  [value]="employees()"
+  [loading]="isLoading()"
+  styleClass="p-datatable-gridlines"
+  responsiveLayout="scroll"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]">
+
+  <ng-template pTemplate="header">
+    <tr>
+      <th>ФИО</th>
+      <th>Отель</th>
+      <th>Должность</th>
+      <th>Телефон</th>
+      <th>Email</th>
+      <th>Статус</th>
+      <th>Действия</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-employee>
+    <tr>
+      <td><strong>{{ employee.fullName }}</strong></td>
+      <td>{{ getHotelName(employee.hotelId) }}</td>
+      <td>{{ employee.position }}</td>
+      <td>{{ employee.phone || '-' }}</td>
+      <td>{{ employee.email || '-' }}</td>
+      <td>
+        <app-status-badge
+          [label]="getStatusLabel(employee.status)"
+          [severity]="getStatusSeverity(employee.status)">
+        </app-status-badge>
+      </td>
+      <td>
+        <div class="actions">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-pencil"
+            label="Изменить"
+            size="small"
+            severity="warning"
+            (click)="openEditDialog(employee)">
+          </button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-trash"
+            label="Удалить"
+            size="small"
+            severity="danger"
+            (click)="deleteEmployee(employee)">
+          </button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="7">
+        <app-empty-state message="Сотрудники не найдены"></app-empty-state>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СОЗДАНИЕ/РЕДАКТИРОВАНИЕ СОТРУДНИКА -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayDialog()"
+  (visibleChange)="displayDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  [header]="isEditMode() ? 'Редактирование сотрудника' : 'Новый сотрудник'"
+  [closable]="true">
+
+  <div class="employee-form">
+    <div class="field">
+      <label for="hotelId">Отель *</label>
+      <p-dropdown
+        inputId="hotelId"
+        [options]="hotels()"
+        [(ngModel)]="employeeForm.hotelId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите отель"
+        styleClass="w-full">
+      </p-dropdown>
+    </div>
+
+    <div class="field">
+      <label for="fullName">ФИО *</label>
+      <input
+        id="fullName"
+        type="text"
+        pInputText
+        [(ngModel)]="employeeForm.fullName"
+        placeholder="Например: Иванов Иван Иванович"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="position">Должность *</label>
+      <input
+        id="position"
+        type="text"
+        pInputText
+        [(ngModel)]="employeeForm.position"
+        placeholder="Например: Администратор"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="phone">Телефон</label>
+      <input
+        id="phone"
+        type="text"
+        pInputText
+        [(ngModel)]="employeeForm.phone"
+        placeholder="+7 900 000-00-00"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        pInputText
+        [(ngModel)]="employeeForm.email"
+        placeholder="employee@example.ru"
+        class="w-full" />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="closeDialog()">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="saveEmployee()">
+    </button>
+  </ng-template>
+</p-dialog>

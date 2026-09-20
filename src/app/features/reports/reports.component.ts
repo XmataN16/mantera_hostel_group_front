@@ -2,16 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-
 import { HotelService } from '../hotels/hotel.service';
 import { ReportService } from './report.service';
-
 import { HotelDto } from '../../shared/models/hotel.model';
 import {
   CheckInOutReportResponse,
@@ -20,6 +17,9 @@ import {
   RevenueReportResponse,
   RoomTypeDistributionItemResponse
 } from '../../shared/models/report.model';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 
 @Component({
   selector: 'app-reports',
@@ -31,7 +31,10 @@ import {
     DropdownModule,
     InputTextModule,
     TableModule,
-    TagModule
+    TagModule,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    SummaryCardComponent
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss'
@@ -41,18 +44,15 @@ export class ReportsComponent implements OnInit {
   private reportService = inject(ReportService);
 
   hotels = signal<HotelDto[]>([]);
-
   selectedHotelId = signal<number | null>(null);
   reportDate = signal(this.getTodayIsoDate());
   fromDate = signal(this.getFirstDayOfCurrentMonthIso());
   toDate = signal(this.getTodayIsoDate());
-
   occupancyReport = signal<OccupancyReportResponse | null>(null);
   checkInOutReport = signal<CheckInOutReportResponse | null>(null);
   revenueReport = signal<RevenueReportResponse | null>(null);
   debtReport = signal<DebtReportResponse | null>(null);
   roomTypeDistribution = signal<RoomTypeDistributionItemResponse[]>([]);
-
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
 
@@ -69,7 +69,6 @@ export class ReportsComponent implements OnInit {
     this.hotelService.getAll().subscribe({
       next: hotels => {
         this.hotels.set(hotels);
-
         if (hotels.length > 0 && !this.selectedHotelId()) {
           this.selectedHotelId.set(hotels[0].id);
           this.loadReports();
@@ -85,27 +84,22 @@ export class ReportsComponent implements OnInit {
 
   loadReports(): void {
     const hotelId = this.selectedHotelId();
-
     if (!hotelId) {
       this.errorMessage.set('Выберите отель');
       return;
     }
-
     if (!this.reportDate()) {
       this.errorMessage.set('Укажите дату отчёта');
       return;
     }
-
     if (!this.fromDate() || !this.toDate()) {
       this.errorMessage.set('Укажите период отчёта');
       return;
     }
-
     if (this.toDate() < this.fromDate()) {
       this.errorMessage.set('Дата окончания периода не может быть раньше даты начала');
       return;
     }
-
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
@@ -155,35 +149,28 @@ export class ReportsComponent implements OnInit {
   getSelectedHotelName(): string {
     const hotel = this.hotels()
       .find(item => item.id === this.selectedHotelId());
-
     return hotel?.name || 'Отель не выбран';
   }
 
   getDistributionPercent(item: RoomTypeDistributionItemResponse): number {
     const max = this.maxDistributionCount();
-
     if (!max) {
       return 0;
     }
-
     return Math.round((item.staysCount / max) * 100);
   }
 
   getOccupancySeverity(): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
     const percent = this.occupancyReport()?.occupancyPercent || 0;
-
     if (percent >= 80) {
       return 'success';
     }
-
     if (percent >= 50) {
       return 'info';
     }
-
     if (percent >= 25) {
       return 'warning';
     }
-
     return 'secondary';
   }
 
@@ -203,7 +190,6 @@ export class ReportsComponent implements OnInit {
     if (!value) {
       return '-';
     }
-
     return new Intl.DateTimeFormat('ru-RU').format(this.parseIsoDate(value));
   }
 
@@ -220,7 +206,6 @@ export class ReportsComponent implements OnInit {
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, '0');
     const day = `${date.getDate()}`.padStart(2, '0');
-
     return `${year}-${month}-${day}`;
   }
 

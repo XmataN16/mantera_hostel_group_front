@@ -1,0 +1,216 @@
+<app-page-header
+  title="Тарифные планы"
+  subtitle="Справочник тарифов отелей">
+  <button
+    pButton
+    type="button"
+    label="Добавить тариф"
+    icon="pi pi-plus"
+    (click)="openCreateDialog()">
+  </button>
+</app-page-header>
+
+<div class="toolbar">
+  <div class="field">
+    <label for="hotelId">Отель</label>
+    <p-dropdown
+      inputId="hotelId"
+      [options]="hotels()"
+      [ngModel]="selectedHotelId()"
+      (ngModelChange)="selectedHotelId.set($event); onHotelChange()"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Все отели"
+      [showClear]="true"
+      styleClass="w-full">
+    </p-dropdown>
+  </div>
+  <button
+    pButton
+    type="button"
+    label="Обновить"
+    icon="pi pi-refresh"
+    severity="secondary"
+    (click)="loadRatePlans()">
+  </button>
+</div>
+
+<p-table
+  [value]="ratePlans()"
+  [loading]="isLoading()"
+  styleClass="p-datatable-gridlines"
+  responsiveLayout="scroll"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]">
+
+  <ng-template pTemplate="header">
+    <tr>
+      <th>Код</th>
+      <th>Название</th>
+      <th>Отель</th>
+      <th>Завтрак</th>
+      <th>Возвратный</th>
+      <th>Описание</th>
+      <th>Действия</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-ratePlan>
+    <tr>
+      <td><code>{{ ratePlan.code }}</code></td>
+      <td><strong>{{ ratePlan.name }}</strong></td>
+      <td>{{ getHotelName(ratePlan.hotelId) }}</td>
+      <td>
+        <i class="pi" [class.pi-check-circle]="ratePlan.breakfastIncluded"
+           [class.pi-times-circle]="!ratePlan.breakfastIncluded"
+           [style.color]="ratePlan.breakfastIncluded ? '#27ae60' : '#e74c3c'">
+        </i>
+      </td>
+      <td>
+        <i class="pi" [class.pi-check-circle]="ratePlan.refundable"
+           [class.pi-times-circle]="!ratePlan.refundable"
+           [style.color]="ratePlan.refundable ? '#27ae60' : '#e74c3c'">
+        </i>
+      </td>
+      <td>{{ ratePlan.description || '-' }}</td>
+      <td>
+        <div class="actions">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-pencil"
+            label="Изменить"
+            size="small"
+            severity="warning"
+            (click)="openEditDialog(ratePlan)">
+          </button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-trash"
+            label="Удалить"
+            size="small"
+            severity="danger"
+            (click)="deleteRatePlan(ratePlan)">
+          </button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="7">
+        <app-empty-state message="Тарифные планы не найдены"></app-empty-state>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СОЗДАНИЕ/РЕДАКТИРОВАНИЕ ТАРИФА -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayDialog()"
+  (visibleChange)="displayDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '560px' }"
+  [header]="isEditMode() ? 'Редактирование тарифа' : 'Новый тариф'"
+  [closable]="true">
+
+  <div class="rate-plan-form">
+    <div class="field">
+      <label for="hotelId">Отель *</label>
+      <p-dropdown
+        inputId="hotelId"
+        [options]="hotels()"
+        [(ngModel)]="ratePlanForm.hotelId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите отель"
+        styleClass="w-full">
+      </p-dropdown>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="code">Код *</label>
+        <input
+          id="code"
+          type="text"
+          pInputText
+          [(ngModel)]="ratePlanForm.code"
+          placeholder="Например: STD, BB, HB"
+          class="w-full" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="name">Название *</label>
+      <input
+        id="name"
+        type="text"
+        pInputText
+        [(ngModel)]="ratePlanForm.name"
+        placeholder="Например: Стандартный, Завтрак включён"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="description">Описание</label>
+      <input
+        id="description"
+        type="text"
+        pInputText
+        [(ngModel)]="ratePlanForm.description"
+        placeholder="Краткое описание тарифа"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="cancellationPolicy">Политика отмены</label>
+      <input
+        id="cancellationPolicy"
+        type="text"
+        pInputText
+        [(ngModel)]="ratePlanForm.cancellationPolicy"
+        placeholder="Например: Бесплатная отмена за 24 часа"
+        class="w-full" />
+    </div>
+
+    <div class="form-row">
+      <div class="field checkbox-field">
+        <p-inputSwitch
+          [(ngModel)]="ratePlanForm.breakfastIncluded">
+        </p-inputSwitch>
+        <label>Завтрак включён</label>
+      </div>
+
+      <div class="field checkbox-field">
+        <p-inputSwitch
+          [(ngModel)]="ratePlanForm.refundable">
+        </p-inputSwitch>
+        <label>Возвратный тариф</label>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="closeDialog()">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="saveRatePlan()">
+    </button>
+  </ng-template>
+</p-dialog>

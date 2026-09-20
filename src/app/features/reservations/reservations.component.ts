@@ -1,20 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
 import { TableModule } from 'primeng/table';
-import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
-import { CalendarModule } from 'primeng/calendar';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
-
 import { HotelService } from '../hotels/hotel.service';
 import { GuestService } from '../guests/guest.service';
 import { ReservationService } from './reservation.service';
-
+import { BillingService } from '../billing/billing.service';
 import { HotelDto } from '../../shared/models/hotel.model';
 import { GuestResponse } from '../../shared/models/guest.model';
 import {
@@ -24,6 +18,12 @@ import {
   ReservationSource,
   ReservationStatus
 } from '../../shared/models/reservation.model';
+import { InvoiceResponse, AdditionalServiceDto } from '../../shared/models/billing.model';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ReservationFormComponent } from '../../shared/components/reservation-form.component';
+import { InvoiceDialogComponent } from '../../shared/components/invoice-dialog.component';
 
 interface DropdownOption<T = string> {
   label: string;
@@ -41,13 +41,14 @@ interface AvailableRoomOption extends AvailabilityRoomResponse {
     CommonModule,
     FormsModule,
     TableModule,
-    DialogModule,
     ButtonModule,
     DropdownModule,
-    CalendarModule,
-    InputNumberModule,
-    InputTextModule,
-    TagModule
+    TagModule,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+    EmptyStateComponent,
+    ReservationFormComponent,
+    InvoiceDialogComponent
   ],
   templateUrl: './reservations.component.html',
   styleUrl: './reservations.component.scss'
@@ -56,6 +57,7 @@ export class ReservationsComponent implements OnInit {
   private reservationService = inject(ReservationService);
   private hotelService = inject(HotelService);
   private guestService = inject(GuestService);
+  private billingService = inject(BillingService);
 
   reservations = signal<ReservationResponse[]>([]);
   hotels = signal<HotelDto[]>([]);
@@ -69,17 +71,11 @@ export class ReservationsComponent implements OnInit {
 
   selectedHotelFilterId = signal<number | null>(null);
 
-  sourceOptions: DropdownOption<ReservationSource>[] = [
-    { label: 'Напрямую', value: 'DIRECT' },
-    { label: 'Телефон', value: 'PHONE' },
-    { label: 'Сайт', value: 'WEBSITE' },
-    { label: 'Агентство', value: 'AGENCY' },
-    { label: 'Платформа бронирования', value: 'BOOKING_PLATFORM' }
-  ];
-
-  newReservation = this.getEmptyReservationForm();
-
-  selectedRoomId: number | null = null;
+  // Invoice dialog
+  invoice = signal<InvoiceResponse | null>(null);
+  availableServices = signal<AdditionalServiceDto[]>([]);
+  displayInvoiceDialog = signal(false);
+  isInvoiceLoading = signal(false);
 
   ngOnInit(): void {
     this.loadDictionaries();
@@ -100,7 +96,6 @@ export class ReservationsComponent implements OnInit {
 
   loadReservations(): void {
     this.isLoading.set(true);
-
     this.reservationService.getAll().subscribe({
       next: reservations => {
         this.reservations.set(reservations);
@@ -113,74 +108,34 @@ export class ReservationsComponent implements OnInit {
     });
   }
 
-  openCreateDialog(): void {
-    this.newReservation = this.getEmptyReservationForm();
-    this.selectedRoomId = null;
-    this.availableRooms.set([]);
-    this.displayCreateDialog.set(true);
-  }
-
-  closeCreateDialog(): void {
-    this.displayCreateDialog.set(false);
-  }
-
   onHotelFilterChange(hotelId: number | null): void {
     this.selectedHotelFilterId.set(hotelId);
   }
 
   getFilteredReservations(): ReservationResponse[] {
     const hotelId = this.selectedHotelFilterId();
-
     if (!hotelId) {
       return this.reservations();
     }
-
     return this.reservations().filter(reservation => reservation.hotelId === hotelId);
   }
 
-  onBookingParamsChange(): void {
-    this.selectedRoomId = null;
-    this.availableRooms.set([]);
-
-    if (
-      !this.newReservation.hotelId ||
-      !this.newReservation.checkInDate ||
-      !this.newReservation.checkOutDate
-    ) {
-      return;
-    }
-
-    if (this.newReservation.checkOutDate <= this.newReservation.checkInDate) {
-      return;
-    }
-
-    this.loadAvailableRooms();
+  openCreateDialog(): void {
+    this.displayCreateDialog.set(true);
   }
 
-  loadAvailableRooms(): void {
-    if (
-      !this.newReservation.hotelId ||
-      !this.newReservation.checkInDate ||
-      !this.newReservation.checkOutDate
-    ) {
-      return;
-    }
+  onBookingParamsChange(params: { hotelId: number; checkInDate: string; checkOutDate: string }): void {
+    this.loadAvailableRooms(params.hotelId, params.checkInDate, params.checkOutDate);
+  }
 
+  loadAvailableRooms(hotelId: number, checkInDate: string, checkOutDate: string): void {
     this.isLoadingRooms.set(true);
-
-    this.reservationService.getAvailableRooms(
-      this.newReservation.hotelId,
-      this.newReservation.checkInDate,
-      this.newReservation.checkOutDate
-    ).subscribe({
+    this.reservationService.getAvailableRooms(hotelId, checkInDate, checkOutDate).subscribe({
       next: rooms => {
         const options = rooms.map(room => ({
           ...room,
-          displayName:
-            `№ ${room.roomNumber} — ${room.roomTypeName}, ` +
-            `${room.capacity} гост., ${this.formatMoney(room.basePrice)}`
+          displayName: `№ ${room.roomNumber} — ${room.roomTypeName}, ${room.capacity} гост., ${this.formatMoney(room.basePrice)}`
         }));
-
         this.availableRooms.set(options);
         this.isLoadingRooms.set(false);
       },
@@ -191,25 +146,25 @@ export class ReservationsComponent implements OnInit {
     });
   }
 
-  saveReservation(): void {
-    if (!this.validateReservationForm()) {
+  onSaveReservation(event: { form: ReservationCreateRequest; selectedRoomId: number | null }): void {
+    const { form, selectedRoomId } = event;
+
+    if (!form.hotelId || !form.guestId || !form.checkInDate || !form.checkOutDate || !selectedRoomId) {
+      alert('Заполните все обязательные поля');
       return;
     }
 
-    const selectedRoom = this.availableRooms()
-      .find(room => room.id === this.selectedRoomId);
-
+    const selectedRoom = this.availableRooms().find(room => room.id === selectedRoomId);
     if (!selectedRoom) {
       alert('Выберите свободный номер');
       return;
     }
 
-    const guestsCount = this.newReservation.adults + this.newReservation.children;
-
+    const guestsCount = form.adults + form.children;
     const request: ReservationCreateRequest = {
-      ...this.newReservation,
-      reservationNumber: this.newReservation.reservationNumber || null,
-      comment: this.newReservation.comment || null,
+      ...form,
+      reservationNumber: form.reservationNumber || null,
+      comment: form.comment || null,
       rooms: [
         {
           roomTypeId: selectedRoom.roomTypeId,
@@ -222,7 +177,6 @@ export class ReservationsComponent implements OnInit {
     };
 
     this.isSaving.set(true);
-
     this.reservationService.create(request).subscribe({
       next: () => {
         this.isSaving.set(false);
@@ -258,17 +212,56 @@ export class ReservationsComponent implements OnInit {
   }
 
   cancelReservation(reservation: ReservationResponse): void {
-    const confirmed = confirm(
-      `Отменить бронирование ${reservation.reservationNumber}?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
+    const confirmed = confirm(`Отменить бронирование ${reservation.reservationNumber}?`);
+    if (!confirmed) return;
 
     this.reservationService.cancel(reservation.id).subscribe({
       next: () => this.loadReservations(),
       error: err => alert('Ошибка отмены: ' + this.getErrorMessage(err))
+    });
+  }
+
+  openInvoiceDialog(reservationId: number, hotelId: number): void {
+    this.displayInvoiceDialog.set(true);
+    this.isInvoiceLoading.set(true);
+    this.invoice.set(null);
+
+    this.billingService.getInvoice(reservationId).subscribe({
+      next: inv => {
+        this.invoice.set(inv);
+        this.isInvoiceLoading.set(false);
+      },
+      error: () => this.isInvoiceLoading.set(false)
+    });
+
+    this.billingService.getAvailableServices(hotelId).subscribe({
+      next: services => this.availableServices.set(services)
+    });
+  }
+
+  onAddService(event: { serviceId: number; quantity: number }): void {
+    const inv = this.invoice();
+    if (!inv) return;
+
+    this.billingService.addService(inv.reservationId, event.serviceId, event.quantity).subscribe({
+      next: () => {
+        this.openInvoiceDialog(inv.reservationId, 0);
+        this.loadReservations();
+      },
+      error: err => alert('Ошибка добавления услуги: ' + this.getErrorMessage(err))
+    });
+  }
+
+  onAddPayment(event: { amount: number; method: string; comment: string }): void {
+    const inv = this.invoice();
+    if (!inv) return;
+
+    this.billingService.addPayment(inv.reservationId, event.amount, event.method, event.comment).subscribe({
+      next: () => {
+        this.openInvoiceDialog(inv.reservationId, 0);
+        this.loadReservations();
+      },
+      error: err => alert('Ошибка регистрации оплаты: ' + this.getErrorMessage(err))
     });
   }
 
@@ -285,8 +278,7 @@ export class ReservationsComponent implements OnInit {
   }
 
   canCancel(reservation: ReservationResponse): boolean {
-    return reservation.status !== 'CHECKED_OUT'
-      && reservation.status !== 'CANCELLED';
+    return reservation.status !== 'CHECKED_OUT' && reservation.status !== 'CANCELLED';
   }
 
   getHotelName(hotelId: number): string {
@@ -295,14 +287,8 @@ export class ReservationsComponent implements OnInit {
 
   getGuestName(guestId: number): string {
     const guest = this.guests().find(item => item.id === guestId);
-
-    if (!guest) {
-      return `ID ${guestId}`;
-    }
-
-    return [guest.lastName, guest.firstName, guest.middleName]
-      .filter(Boolean)
-      .join(' ');
+    if (!guest) return `ID ${guestId}`;
+    return [guest.lastName, guest.firstName, guest.middleName].filter(Boolean).join(' ');
   }
 
   getStatusLabel(status: ReservationStatus): string {
@@ -314,7 +300,6 @@ export class ReservationsComponent implements OnInit {
       CANCELLED: 'Отменено',
       NO_SHOW: 'Не заехал'
     };
-
     return labels[status];
   }
 
@@ -327,7 +312,6 @@ export class ReservationsComponent implements OnInit {
       CANCELLED: 'danger',
       NO_SHOW: 'danger'
     };
-
     return severities[status];
   }
 
@@ -339,65 +323,15 @@ export class ReservationsComponent implements OnInit {
       AGENCY: 'Агентство',
       BOOKING_PLATFORM: 'Платформа'
     };
-
     return labels[source];
   }
 
-  formatMoney(value: number): string {
+  formatMoney(value: number | null | undefined): string {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'RUB',
       maximumFractionDigits: 0
     }).format(value || 0);
-  }
-
-  private validateReservationForm(): boolean {
-    if (!this.newReservation.hotelId) {
-      alert('Выберите отель');
-      return false;
-    }
-
-    if (!this.newReservation.guestId) {
-      alert('Выберите гостя');
-      return false;
-    }
-
-    if (!this.newReservation.checkInDate || !this.newReservation.checkOutDate) {
-      alert('Укажите даты заезда и выезда');
-      return false;
-    }
-
-    if (this.newReservation.checkOutDate <= this.newReservation.checkInDate) {
-      alert('Дата выезда должна быть позже даты заезда');
-      return false;
-    }
-
-    if (!this.newReservation.adults || this.newReservation.adults < 1) {
-      alert('Количество взрослых должно быть не меньше 1');
-      return false;
-    }
-
-    if (!this.selectedRoomId) {
-      alert('Выберите свободный номер');
-      return false;
-    }
-
-    return true;
-  }
-
-  private getEmptyReservationForm(): ReservationCreateRequest {
-    return {
-      hotelId: 0,
-      guestId: 0,
-      reservationNumber: '',
-      source: 'DIRECT',
-      checkInDate: '',
-      checkOutDate: '',
-      adults: 1,
-      children: 0,
-      comment: '',
-      rooms: []
-    };
   }
 
   private getErrorMessage(err: any): string {

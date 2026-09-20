@@ -1,0 +1,206 @@
+<app-page-header
+  title="Категории номеров"
+  subtitle="Справочник типов номеров отелей">
+  <button
+    pButton
+    type="button"
+    label="Добавить категорию"
+    icon="pi pi-plus"
+    (click)="openCreateDialog()">
+  </button>
+</app-page-header>
+
+<div class="toolbar">
+  <div class="field">
+    <label for="hotelId">Отель</label>
+    <p-dropdown
+      inputId="hotelId"
+      [options]="hotels()"
+      [ngModel]="selectedHotelId()"
+      (ngModelChange)="selectedHotelId.set($event); onHotelChange()"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Все отели"
+      [showClear]="true"
+      styleClass="w-full">
+    </p-dropdown>
+  </div>
+  <button
+    pButton
+    type="button"
+    label="Обновить"
+    icon="pi pi-refresh"
+    severity="secondary"
+    (click)="loadRoomTypes()">
+  </button>
+</div>
+
+<p-table
+  [value]="roomTypes()"
+  [loading]="isLoading()"
+  styleClass="p-datatable-gridlines"
+  responsiveLayout="scroll"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]">
+
+  <ng-template pTemplate="header">
+    <tr>
+      <th>Код</th>
+      <th>Название</th>
+      <th>Отель</th>
+      <th>Вместимость</th>
+      <th>Базовая цена</th>
+      <th>Статус</th>
+      <th>Действия</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-roomType>
+    <tr>
+      <td><code>{{ roomType.code }}</code></td>
+      <td><strong>{{ roomType.name }}</strong></td>
+      <td>{{ getHotelName(roomType.hotelId) }}</td>
+      <td>{{ roomType.capacity }} чел.</td>
+      <td>{{ formatMoney(roomType.basePrice) }}</td>
+      <td>
+        <app-status-badge
+          [label]="getStatusLabel(roomType.status)"
+          [severity]="getStatusSeverity(roomType.status)">
+        </app-status-badge>
+      </td>
+      <td>
+        <div class="actions">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-pencil"
+            label="Изменить"
+            size="small"
+            severity="warning"
+            (click)="openEditDialog(roomType)">
+          </button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-trash"
+            label="Удалить"
+            size="small"
+            severity="danger"
+            (click)="deleteRoomType(roomType)">
+          </button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="7">
+        <app-empty-state message="Категории номеров не найдены"></app-empty-state>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СОЗДАНИЕ/РЕДАКТИРОВАНИЕ КАТЕГОРИИ -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayDialog()"
+  (visibleChange)="displayDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  [header]="isEditMode() ? 'Редактирование категории' : 'Новая категория'"
+  [closable]="true">
+
+  <div class="room-type-form">
+    <div class="field">
+      <label for="hotelId">Отель *</label>
+      <p-dropdown
+        inputId="hotelId"
+        [options]="hotels()"
+        [(ngModel)]="roomTypeForm.hotelId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите отель"
+        styleClass="w-full">
+      </p-dropdown>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="code">Код *</label>
+        <input
+          id="code"
+          type="text"
+          pInputText
+          [(ngModel)]="roomTypeForm.code"
+          placeholder="Например: STD, DBL, LUX"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="capacity">Вместимость (чел.) *</label>
+        <p-inputNumber
+          inputId="capacity"
+          [(ngModel)]="roomTypeForm.capacity"
+          [min]="1"
+          [showButtons]="true"
+          styleClass="w-full">
+        </p-inputNumber>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="name">Название *</label>
+      <input
+        id="name"
+        type="text"
+        pInputText
+        [(ngModel)]="roomTypeForm.name"
+        placeholder="Например: Стандарт, Дабл, Люкс"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="description">Описание</label>
+      <input
+        id="description"
+        type="text"
+        pInputText
+        [(ngModel)]="roomTypeForm.description"
+        placeholder="Краткое описание"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="basePrice">Базовая цена *</label>
+      <p-inputNumber
+        inputId="basePrice"
+        [(ngModel)]="roomTypeForm.basePrice"
+        [min]="0"
+        [showButtons]="true"
+        styleClass="w-full">
+      </p-inputNumber>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="closeDialog()">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="saveRoomType()">
+    </button>
+  </ng-template>
+</p-dialog>

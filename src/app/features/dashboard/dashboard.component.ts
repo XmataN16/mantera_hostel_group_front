@@ -2,30 +2,36 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-
 import { HotelService } from '../hotels/hotel.service';
 import { ReservationService } from '../reservations/reservation.service';
 import { ReportService } from '../reports/report.service';
-
 import { HotelDto } from '../../shared/models/hotel.model';
 import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/models/report.model';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { StatCardComponent } from '../../shared/components/stat-card.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    RouterLink,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+    EmptyStateComponent,
+    StatCardComponent
+  ],
   template: `
     <div class="dashboard">
-      <div class="page-header">
-        <div>
-          <h1>Дашборд</h1>
-          <p>Оперативная сводка по сети отелей Mantera</p>
-        </div>
-
+      <app-page-header
+        title="Дашборд"
+        subtitle="Оперативная сводка по сети отелей Mantera">
         <a routerLink="/reports" class="reports-link">
           Открыть отчёты
         </a>
-      </div>
+      </app-page-header>
 
       @if (errorMessage()) {
         <div class="error-message">
@@ -38,61 +44,57 @@ import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/mod
         <strong>{{ selectedHotel()?.name || 'не выбран' }}</strong>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <h3>Активных бронирований</h3>
-          <p class="value">{{ activeReservationsCount() }}</p>
-          <span>Созданные, подтверждённые и текущие проживания</span>
+      @if (!selectedHotel()) {
+        <app-empty-state message="Нет данных для отображения. Добавьте отель в справочнике."></app-empty-state>
+      } @else {
+        <div class="stats-grid">
+          <app-stat-card
+            title="Активных бронирований"
+            [value]="activeReservationsCount()"
+            note="Созданные, подтверждённые и текущие проживания">
+          </app-stat-card>
+
+          <app-stat-card
+            title="Загрузка сегодня"
+            [value]="formatPercent(occupancyReport()?.occupancyPercent)"
+            [badgeLabel]="(occupancyReport()?.occupiedRooms || 0) + ' из ' + (occupancyReport()?.totalRooms || 0)"
+            [note]="'Недоступно: ' + (occupancyReport()?.maintenanceRooms || 0)">
+          </app-stat-card>
+
+          <app-stat-card
+            title="Свободных номеров"
+            [value]="occupancyReport()?.availableRooms || 0"
+            [note]="'Забронировано: ' + (occupancyReport()?.bookedRooms || 0)">
+          </app-stat-card>
+
+          <app-stat-card
+            title="Выручка за месяц"
+            [value]="formatMoney(revenueReport()?.totalRevenue)"
+            badgeLabel="Проживание + услуги"
+            [isMoney]="true"
+            [note]="'Проживание: ' + formatMoney(revenueReport()?.accommodationRevenue)">
+          </app-stat-card>
         </div>
 
-        <div class="stat-card">
-          <h3>Загрузка сегодня</h3>
-          <p class="value">{{ formatPercent(occupancyReport()?.occupancyPercent) }}</p>
-          <span>
-            {{ occupancyReport()?.occupiedRooms || 0 }}
-            занято из
-            {{ occupancyReport()?.totalRooms || 0 }}
-          </span>
+        <div class="quick-actions">
+          <a routerLink="/reservations" class="quick-card">
+            <strong>Бронирования</strong>
+            <span>Управление заявками, заездами и выездами</span>
+          </a>
+          <a routerLink="/reservations/booking-board" class="quick-card">
+            <strong>Шахматка</strong>
+            <span>Календарь занятости номерного фонда</span>
+          </a>
+          <a routerLink="/guests" class="quick-card">
+            <strong>Гости</strong>
+            <span>Справочник гостей и история проживаний</span>
+          </a>
+          <a routerLink="/reports" class="quick-card">
+            <strong>Отчёты</strong>
+            <span>Загрузка, выручка, долги и распределение</span>
+          </a>
         </div>
-
-        <div class="stat-card">
-          <h3>Свободных номеров</h3>
-          <p class="value">{{ occupancyReport()?.availableRooms || 0 }}</p>
-          <span>
-            Недоступно: {{ occupancyReport()?.maintenanceRooms || 0 }}
-          </span>
-        </div>
-
-        <div class="stat-card">
-          <h3>Выручка за месяц</h3>
-          <p class="value money">
-            {{ formatMoney(revenueReport()?.totalRevenue) }}
-          </p>
-          <span>По проживанию и услугам</span>
-        </div>
-      </div>
-
-      <div class="quick-actions">
-        <a routerLink="/reservations" class="quick-card">
-          <strong>Бронирования</strong>
-          <span>Управление заявками, заездами и выездами</span>
-        </a>
-
-        <a routerLink="/reservations/booking-board" class="quick-card">
-          <strong>Шахматка</strong>
-          <span>Календарь занятости номерного фонда</span>
-        </a>
-
-        <a routerLink="/guests" class="quick-card">
-          <strong>Гости</strong>
-          <span>Справочник гостей и история проживаний</span>
-        </a>
-
-        <a routerLink="/reports" class="quick-card">
-          <strong>Отчёты</strong>
-          <span>Загрузка, выручка, долги и распределение</span>
-        </a>
-      </div>
+      }
     </div>
   `,
   styles: [`
@@ -102,25 +104,6 @@ import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/mod
       gap: 1.5rem;
       max-width: 1280px;
     }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
-
-      h1 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 2rem;
-      }
-
-      p {
-        margin: 0.35rem 0 0;
-        color: #7f8c8d;
-      }
-    }
-
     .reports-link {
       padding: 0.75rem 1rem;
       border-radius: 8px;
@@ -128,8 +111,9 @@ import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/mod
       color: #ffffff;
       text-decoration: none;
       font-weight: 600;
+      transition: background 0.2s;
+      &:hover { background: #2980b9; }
     }
-
     .error-message {
       padding: 0.875rem 1rem;
       border-radius: 8px;
@@ -137,7 +121,6 @@ import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/mod
       color: #c0392b;
       border: 1px solid #f5b7b1;
     }
-
     .hotel-context {
       display: flex;
       gap: 0.5rem;
@@ -145,63 +128,19 @@ import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/mod
       border-radius: 10px;
       background: #ffffff;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-      span {
-        color: #7f8c8d;
-      }
-
-      strong {
-        color: #2c3e50;
-      }
+      span { color: #7f8c8d; }
+      strong { color: #2c3e50; }
     }
-
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(180px, 1fr));
       gap: 1.5rem;
     }
-
-    .stat-card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      min-height: 160px;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-
-      h3 {
-        margin: 0;
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        font-weight: 600;
-      }
-
-      .value {
-        margin: 0;
-        font-size: 2.2rem;
-        font-weight: 800;
-        color: #3498db;
-
-        &.money {
-          font-size: 1.55rem;
-        }
-      }
-
-      span {
-        margin-top: auto;
-        color: #7f8c8d;
-        font-size: 0.85rem;
-      }
-    }
-
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(4, minmax(180px, 1fr));
       gap: 1rem;
     }
-
     .quick-card {
       display: flex;
       flex-direction: column;
@@ -212,38 +151,18 @@ import { OccupancyReportResponse, RevenueReportResponse } from '../../shared/mod
       text-decoration: none;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
       transition: transform 0.15s, box-shadow 0.15s;
-
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
       }
-
-      strong {
-        color: #2c3e50;
-      }
-
-      span {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-      }
+      strong { color: #2c3e50; }
+      span { color: #7f8c8d; font-size: 0.9rem; }
     }
-
     @media (max-width: 1100px) {
-      .stats-grid,
-      .quick-actions {
-        grid-template-columns: repeat(2, minmax(180px, 1fr));
-      }
+      .stats-grid, .quick-actions { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
     }
-
     @media (max-width: 700px) {
-      .page-header {
-        flex-direction: column;
-      }
-
-      .stats-grid,
-      .quick-actions {
-        grid-template-columns: 1fr;
-      }
+      .stats-grid, .quick-actions { grid-template-columns: 1fr; }
     }
   `]
 })
@@ -254,11 +173,9 @@ export class DashboardComponent implements OnInit {
 
   hotels = signal<HotelDto[]>([]);
   selectedHotel = signal<HotelDto | null>(null);
-
   activeReservationsCount = signal(0);
   occupancyReport = signal<OccupancyReportResponse | null>(null);
   revenueReport = signal<RevenueReportResponse | null>(null);
-
   errorMessage = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -269,12 +186,10 @@ export class DashboardComponent implements OnInit {
     this.hotelService.getAll().subscribe({
       next: hotels => {
         this.hotels.set(hotels);
-
         if (hotels.length === 0) {
           this.errorMessage.set('В системе нет отелей');
           return;
         }
-
         this.selectedHotel.set(hotels[0]);
         this.loadStats(hotels[0].id);
       },
@@ -296,7 +211,6 @@ export class DashboardComponent implements OnInit {
           reservation.hotelId === hotelId &&
           ['CREATED', 'CONFIRMED', 'CHECKED_IN'].includes(reservation.status)
         ).length;
-
         this.activeReservationsCount.set(activeCount);
       },
       error: () => {
@@ -345,7 +259,6 @@ export class DashboardComponent implements OnInit {
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, '0');
     const day = `${date.getDate()}`.padStart(2, '0');
-
     return `${year}-${month}-${day}`;
   }
 

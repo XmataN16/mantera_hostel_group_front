@@ -4,24 +4,7 @@
   gap: 1.5rem;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-
-  h2 {
-    margin: 0;
-    color: #2c3e50;
-    font-size: 1.8rem;
-  }
-
-  p {
-    margin: 0.35rem 0 0;
-    color: #7f8c8d;
-  }
-}
-
+// Стили для фильтров
 .filters-panel {
   display: grid;
   grid-template-columns: minmax(260px, 1.4fr) repeat(3, minmax(160px, 1fr)) auto;
@@ -59,6 +42,7 @@
   }
 }
 
+// Сообщение об ошибке
 .error-message {
   padding: 0.875rem 1rem;
   border-radius: 8px;
@@ -67,6 +51,7 @@
   border: 1px solid #f5b7b1;
 }
 
+// Карточка заголовка отчёта
 .report-title-card {
   padding: 1rem 1.25rem;
   border-radius: 10px;
@@ -90,6 +75,7 @@
   }
 }
 
+// Сетка summary-карточек
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(180px, 1fr));
@@ -133,6 +119,7 @@
   }
 }
 
+// Сетка детальных отчётов
 .details-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -157,6 +144,7 @@
   }
 }
 
+// Блок загрузки
 .occupancy-box {
   display: flex;
   flex-direction: column;
@@ -218,6 +206,7 @@
   }
 }
 
+// Распределение по категориям
 .distribution-list {
   display: flex;
   flex-direction: column;
@@ -255,12 +244,7 @@
   color: #c0392b;
 }
 
-.empty-state {
-  padding: 1.5rem;
-  text-align: center;
-  color: #7f8c8d;
-}
-
+// Адаптивность
 @media (max-width: 1200px) {
   .filters-panel {
     grid-template-columns: 1fr 1fr;
@@ -276,10 +260,6 @@
 }
 
 @media (max-width: 700px) {
-  .page-header {
-    flex-direction: column;
-  }
-
   .filters-panel,
   .summary-grid {
     grid-template-columns: 1fr;

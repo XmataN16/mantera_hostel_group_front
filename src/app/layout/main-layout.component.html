@@ -1,65 +1,80 @@
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <h2>Mantera PMS</h2>
-    </div>
-
-    <nav class="sidebar-nav">
-      <a routerLink="/dashboard" routerLinkActive="active">
-        <span class="icon">📊</span>
-        <span>Дашборд</span>
-      </a>
-
-      <a routerLink="/reservations/booking-board" routerLinkActive="active">
-        <span class="icon">📅</span>
-        <span>Шахматка</span>
-      </a>
-
-      <a routerLink="/reservations" routerLinkActive="active">
-        <span class="icon">📋</span>
-        <span>Бронирования</span>
-      </a>
-
-      <a routerLink="/guests" routerLinkActive="active">
-        <span class="icon">👥</span>
-        <span>Гости</span>
-      </a>
-
-      <a routerLink="/rooms" routerLinkActive="active">
-        <span class="icon">🛏️</span>
-        <span>Номера</span>
-      </a>
-
-      <a routerLink="/hotels" routerLinkActive="active">
-        <span class="icon">🏨</span>
-        <span>Отели</span>
-      </a>
-
-      @if (isAdmin()) {
-        <a routerLink="/users" routerLinkActive="active">
-          <span class="icon">👤</span>
-          <span>Пользователи</span>
-        </a>
-      }
-
-      <a routerLink="/reports" routerLinkActive="active">
-        <span class="icon">📈</span>
-        <span>Отчеты</span>
-      </a>
-    </nav>
-  </aside>
-
-  <div class="main-content">
-    <header class="top-bar">
-      <div class="user-info">
-        <span class="username">{{ currentUser() }}</span>
-        <span class="roles">{{ userRoles().join(', ') }}</span>
-      </div>
-      <button (click)="logout()" class="logout-btn">Выход</button>
-    </header>
-
-    <main class="content">
-      <router-outlet />
-    </main>
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>Mantera PMS</h2>
   </div>
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard" routerLinkActive="active">
+      <span class="icon">📊</span>
+      <span>Дашборд</span>
+    </a>
+    <a routerLink="/reservations/booking-board" routerLinkActive="active">
+      <span class="icon">📅</span>
+      <span>Шахматка</span>
+    </a>
+    <a routerLink="/reservations" routerLinkActive="active">
+      <span class="icon">📋</span>
+      <span>Бронирования</span>
+    </a>
+    <a routerLink="/guests" routerLinkActive="active">
+      <span class="icon">👥</span>
+      <span>Гости</span>
+    </a>
+    <a routerLink="/rooms" routerLinkActive="active">
+      <span class="icon">🚪</span>
+      <span>Номера</span>
+    </a>
+
+    <!-- Справочники (только ADMIN и MANAGER) -->
+    @if (isManagerOrAdmin()) {
+      <div class="menu-section">
+        <span class="section-title">Справочники</span>
+      </div>
+      <a routerLink="/room-types" routerLinkActive="active">
+        <span class="icon">🏷️</span>
+        <span>Категории номеров</span>
+      </a>
+      <a routerLink="/additional-services" routerLinkActive="active">
+        <span class="icon">⭐</span>
+        <span>Доп. услуги</span>
+      </a>
+      <a routerLink="/rate-plans" routerLinkActive="active">
+        <span class="icon">💰</span>
+        <span>Тарифы</span>
+      </a>
+      <a routerLink="/employees" routerLinkActive="active">
+        <span class="icon">👔</span>
+        <span>Сотрудники</span>
+      </a>
+    }
+
+    <a routerLink="/hotels" routerLinkActive="active">
+      <span class="icon">🏨</span>
+      <span>Отели</span>
+    </a>
+
+    @if (isAdmin()) {
+      <a routerLink="/users" routerLinkActive="active">
+        <span class="icon">👤</span>
+        <span>Пользователи</span>
+      </a>
+    }
+
+    <a routerLink="/reports" routerLinkActive="active">
+      <span class="icon">📈</span>
+      <span>Отчёты</span>
+    </a>
+  </nav>
+</aside>
+
+<div class="main-content">
+  <header class="top-bar">
+    <div class="user-info">
+      <span class="username">{{ currentUser() }}</span>
+      <span class="roles">{{ userRoles().join(', ') }}</span>
+    </div>
+    <button class="logout-btn" (click)="logout()">Выход</button>
+  </header>
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
 </div>

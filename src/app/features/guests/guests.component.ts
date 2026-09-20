@@ -1,14 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
-
 import { GuestService } from './guest.service';
 import {
   GuestCreateRequest,
@@ -17,6 +15,9 @@ import {
   GuestUpdateRequest
 } from '../../shared/models/guest.model';
 import { ReservationStatus } from '../../shared/models/reservation.model';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 
 interface DropdownOption<T = string> {
   label: string;
@@ -34,7 +35,10 @@ interface DropdownOption<T = string> {
     ButtonModule,
     InputTextModule,
     DropdownModule,
-    TagModule
+    TagModule,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+    EmptyStateComponent
   ],
   templateUrl: './guests.component.html',
   styleUrl: './guests.component.scss'
@@ -44,18 +48,14 @@ export class GuestsComponent implements OnInit {
 
   guests = signal<GuestResponse[]>([]);
   searchTerm = signal('');
-
   isLoading = signal(false);
   isSaving = signal(false);
   isHistoryLoading = signal(false);
-
   displayDialog = signal(false);
   displayHistoryDialog = signal(false);
-
   isEditMode = signal(false);
   selectedGuestId = signal<number | null>(null);
   selectedGuestForHistory = signal<GuestResponse | null>(null);
-
   history = signal<GuestStayHistoryResponse[]>([]);
 
   genderOptions: DropdownOption[] = [
@@ -76,17 +76,14 @@ export class GuestsComponent implements OnInit {
 
   filteredGuests = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
-
     if (!query) {
       return this.guests();
     }
-
     return this.guests().filter(guest => {
       const fullName = this.getGuestFullName(guest).toLowerCase();
       const phone = guest.phone?.toLowerCase() || '';
       const email = guest.email?.toLowerCase() || '';
       const documentNumber = guest.documentNumber?.toLowerCase() || '';
-
       return fullName.includes(query)
         || phone.includes(query)
         || email.includes(query)
@@ -100,7 +97,6 @@ export class GuestsComponent implements OnInit {
 
   loadGuests(): void {
     this.isLoading.set(true);
-
     this.guestService.getAll().subscribe({
       next: guests => {
         this.guests.set(guests);
@@ -123,7 +119,6 @@ export class GuestsComponent implements OnInit {
   openEditDialog(guest: GuestResponse): void {
     this.isEditMode.set(true);
     this.selectedGuestId.set(guest.id);
-
     this.guestForm = {
       lastName: guest.lastName,
       firstName: guest.firstName,
@@ -140,7 +135,6 @@ export class GuestsComponent implements OnInit {
       address: guest.address,
       comment: guest.comment
     };
-
     this.displayDialog.set(true);
   }
 
@@ -152,20 +146,16 @@ export class GuestsComponent implements OnInit {
     if (!this.validateForm()) {
       return;
     }
-
     if (this.isEditMode()) {
       this.updateGuest();
       return;
     }
-
     this.createGuest();
   }
 
   createGuest(): void {
     const request: GuestCreateRequest = this.normalizeCreateRequest(this.guestForm);
-
     this.isSaving.set(true);
-
     this.guestService.create(request).subscribe({
       next: () => {
         this.isSaving.set(false);
@@ -181,16 +171,12 @@ export class GuestsComponent implements OnInit {
 
   updateGuest(): void {
     const guestId = this.selectedGuestId();
-
     if (!guestId) {
       alert('Не выбран гость для редактирования');
       return;
     }
-
     const request: GuestUpdateRequest = this.normalizeUpdateRequest(this.guestForm);
-
     this.isSaving.set(true);
-
     this.guestService.update(guestId, request).subscribe({
       next: () => {
         this.isSaving.set(false);
@@ -205,14 +191,10 @@ export class GuestsComponent implements OnInit {
   }
 
   deleteGuest(guest: GuestResponse): void {
-    const confirmed = confirm(
-      `Удалить гостя ${this.getGuestFullName(guest)}?`
-    );
-
+    const confirmed = confirm(`Удалить гостя ${this.getGuestFullName(guest)}?`);
     if (!confirmed) {
       return;
     }
-
     this.guestService.delete(guest.id).subscribe({
       next: () => this.loadGuests(),
       error: err => alert('Ошибка удаления гостя: ' + this.getErrorMessage(err))
@@ -224,7 +206,6 @@ export class GuestsComponent implements OnInit {
     this.history.set([]);
     this.displayHistoryDialog.set(true);
     this.isHistoryLoading.set(true);
-
     this.guestService.getStayHistory(guest.id).subscribe({
       next: history => {
         this.history.set(history);
@@ -253,7 +234,6 @@ export class GuestsComponent implements OnInit {
       FEMALE: 'Женский',
       OTHER: 'Другое'
     };
-
     return labels[gender] || gender;
   }
 
@@ -265,7 +245,6 @@ export class GuestsComponent implements OnInit {
       DRIVER_LICENSE: 'Водительское удостоверение',
       OTHER: 'Другое'
     };
-
     return labels[documentType] || documentType;
   }
 
@@ -278,7 +257,6 @@ export class GuestsComponent implements OnInit {
       CANCELLED: 'Отменено',
       NO_SHOW: 'Не заехал'
     };
-
     return labels[status] || status;
   }
 
@@ -291,7 +269,6 @@ export class GuestsComponent implements OnInit {
       CANCELLED: 'danger',
       NO_SHOW: 'danger'
     };
-
     return severities[status] || 'secondary';
   }
 
@@ -307,7 +284,6 @@ export class GuestsComponent implements OnInit {
     if (!value) {
       return '-';
     }
-
     return new Intl.DateTimeFormat('ru-RU').format(new Date(value));
   }
 
@@ -316,32 +292,26 @@ export class GuestsComponent implements OnInit {
       alert('Введите фамилию');
       return false;
     }
-
     if (!this.guestForm.firstName?.trim()) {
       alert('Введите имя');
       return false;
     }
-
     if (!this.guestForm.birthDate) {
       alert('Укажите дату рождения');
       return false;
     }
-
     if (!this.guestForm.gender) {
       alert('Выберите пол');
       return false;
     }
-
     if (!this.guestForm.documentType) {
       alert('Выберите тип документа');
       return false;
     }
-
     if (!this.guestForm.documentNumber?.trim()) {
       alert('Введите номер документа');
       return false;
     }
-
     return true;
   }
 
@@ -372,7 +342,6 @@ export class GuestsComponent implements OnInit {
     if (value === null || value === undefined) {
       return null;
     }
-
     const trimmed = value.trim();
     return trimmed ? trimmed : null;
   }

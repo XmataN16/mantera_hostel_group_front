@@ -1,0 +1,100 @@
+.users-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: #7f8c8d;
+  }
+}
+
+.muted {
+  margin-top: 0.25rem;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+}
+
+.status-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+
+  &.active {
+    color: #27ae60;
+  }
+
+  &.inactive {
+    color: #e74c3c;
+  }
+}
+
+.user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-weight: 600;
+    color: #34495e;
+    font-size: 0.9rem;
+  }
+
+  ::ng-deep {
+    .p-dropdown,
+    .p-multiselect {
+      width: 100%;
+    }
+  }
+}
+
+.dialog-info {
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #34495e;
+  margin: 0 0 1rem 0;
+
+  strong {
+    color: #2c3e50;
+  }
+}
+
+@media (max-width: 900px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

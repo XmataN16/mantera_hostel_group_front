@@ -1,0 +1,269 @@
+<app-page-header
+  title="Управление пользователями"
+  subtitle="Учётные записи сотрудников, роли и права доступа">
+  <button
+    pButton
+    type="button"
+    label="Создать пользователя"
+    icon="pi pi-plus"
+    (click)="openCreateDialog()">
+  </button>
+</app-page-header>
+
+<p-table
+  [value]="users()"
+  [loading]="isLoading()"
+  styleClass="p-datatable-gridlines"
+  responsiveLayout="scroll"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]">
+
+  <ng-template pTemplate="header">
+    <tr>
+      <th>Сотрудник</th>
+      <th>Логин</th>
+      <th>Роли</th>
+      <th>Статус</th>
+      <th>Действия</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-user>
+    <tr>
+      <td>
+        <strong>{{ user.employeeName }}</strong>
+        <div class="muted">ID {{ user.employeeId }}</div>
+      </td>
+      <td><strong>{{ user.username }}</strong></td>
+      <td>
+        @for (role of user.roles; track role) {
+          <app-status-badge
+            [label]="role"
+            [severity]="getRoleSeverity(role)"
+            styleClass="mr-1">
+          </app-status-badge>
+        }
+      </td>
+      <td>
+        <p-inputSwitch
+          [(ngModel)]="user.enabled"
+          (onChange)="toggleUserStatus(user)">
+        </p-inputSwitch>
+        <span class="ml-2 status-text" [class.active]="user.enabled" [class.inactive]="!user.enabled">
+          {{ user.enabled ? 'Активен' : 'Заблокирован' }}
+        </span>
+      </td>
+      <td>
+        <div class="actions">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-key"
+            label="Пароль"
+            size="small"
+            severity="warning"
+            (click)="openPasswordDialog(user)">
+          </button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-shield"
+            label="Роли"
+            size="small"
+            severity="info"
+            (click)="openRolesDialog(user)">
+          </button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="5">
+        <app-empty-state message="Пользователи не найдены"></app-empty-state>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayCreateDialog()"
+  (visibleChange)="displayCreateDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  header="Новый пользователь"
+  [closable]="true">
+
+  <div class="user-form">
+    <div class="field">
+      <label>Сотрудник *</label>
+      <p-dropdown
+        [options]="employees()"
+        [(ngModel)]="newUser.employeeId"
+        optionLabel="fullName"
+        optionValue="id"
+        placeholder="Выберите сотрудника"
+        styleClass="w-full">
+        <ng-template pTemplate="item" let-emp>
+          <div>
+            <strong>{{ emp.fullName }}</strong>
+            <div class="muted">{{ emp.position }} — {{ emp.hotelName }}</div>
+          </div>
+        </ng-template>
+      </p-dropdown>
+    </div>
+
+    <div class="field">
+      <label>Логин *</label>
+      <input
+        type="text"
+        pInputText
+        [(ngModel)]="newUser.username"
+        placeholder="Например: ivanov"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Пароль * (мин. 6 символов)</label>
+      <input
+        type="password"
+        pInputText
+        [(ngModel)]="newUser.password"
+        placeholder="Введите пароль"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label>Роли *</label>
+      <p-multiSelect
+        [options]="roles()"
+        [(ngModel)]="newUser.roleCodes"
+        optionLabel="name"
+        optionValue="code"
+        placeholder="Выберите роли"
+        styleClass="w-full">
+      </p-multiSelect>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="displayCreateDialog.set(false)">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Создать"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="createUser()">
+    </button>
+  </ng-template>
+</p-dialog>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СМЕНА ПАРОЛЯ -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayPasswordDialog()"
+  (visibleChange)="displayPasswordDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+  header="Смена пароля"
+  [closable]="true">
+
+  @if (selectedUserForPassword(); as user) {
+    <div class="user-form">
+      <p class="dialog-info">
+        Пользователь: <strong>{{ user.username }}</strong>
+        ({{ user.employeeName }})
+      </p>
+      <div class="field">
+        <label>Новый пароль * (мин. 6 символов)</label>
+        <input
+          type="password"
+          pInputText
+          [(ngModel)]="newPassword"
+          placeholder="Введите новый пароль"
+          class="w-full" />
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="displayPasswordDialog.set(false)">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="changePassword()">
+    </button>
+  </ng-template>
+</p-dialog>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СМЕНА РОЛЕЙ -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayRolesDialog()"
+  (visibleChange)="displayRolesDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+  header="Изменение ролей"
+  [closable]="true">
+
+  @if (selectedUserForRoles(); as user) {
+    <div class="user-form">
+      <p class="dialog-info">
+        Пользователь: <strong>{{ user.username }}</strong>
+        ({{ user.employeeName }})
+      </p>
+      <div class="field">
+        <label>Роли *</label>
+        <p-multiSelect
+          [options]="roles()"
+          [(ngModel)]="selectedRoleCodes"
+          optionLabel="name"
+          optionValue="code"
+          placeholder="Выберите роли"
+          styleClass="w-full">
+        </p-multiSelect>
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="displayRolesDialog.set(false)">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="saveRoles()">
+    </button>
+  </ng-template>
+</p-dialog>

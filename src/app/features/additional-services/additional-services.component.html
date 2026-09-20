@@ -1,0 +1,180 @@
+<app-page-header
+  title="Дополнительные услуги"
+  subtitle="Справочник платных услуг отелей">
+  <button
+    pButton
+    type="button"
+    label="Добавить услугу"
+    icon="pi pi-plus"
+    (click)="openCreateDialog()">
+  </button>
+</app-page-header>
+
+<div class="toolbar">
+  <div class="field">
+    <label for="hotelId">Отель</label>
+    <p-dropdown
+      inputId="hotelId"
+      [options]="hotels()"
+      [ngModel]="selectedHotelId()"
+      (ngModelChange)="selectedHotelId.set($event); onHotelChange()"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Все отели"
+      [showClear]="true"
+      styleClass="w-full">
+    </p-dropdown>
+  </div>
+  <button
+    pButton
+    type="button"
+    label="Обновить"
+    icon="pi pi-refresh"
+    severity="secondary"
+    (click)="loadServices()">
+  </button>
+</div>
+
+<p-table
+  [value]="services()"
+  [loading]="isLoading()"
+  styleClass="p-datatable-gridlines"
+  responsiveLayout="scroll"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]">
+
+  <ng-template pTemplate="header">
+    <tr>
+      <th>Название</th>
+      <th>Отель</th>
+      <th>Цена</th>
+      <th>Описание</th>
+      <th>Статус</th>
+      <th>Действия</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-service>
+    <tr>
+      <td><strong>{{ service.name }}</strong></td>
+      <td>{{ getHotelName(service.hotelId) }}</td>
+      <td>{{ formatMoney(service.price) }}</td>
+      <td>{{ service.description || '-' }}</td>
+      <td>
+        <app-status-badge
+          [label]="getStatusLabel(service.status)"
+          [severity]="getStatusSeverity(service.status)">
+        </app-status-badge>
+      </td>
+      <td>
+        <div class="actions">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-pencil"
+            label="Изменить"
+            size="small"
+            severity="warning"
+            (click)="openEditDialog(service)">
+          </button>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-trash"
+            label="Удалить"
+            size="small"
+            severity="danger"
+            (click)="deleteService(service)">
+          </button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="6">
+        <app-empty-state message="Услуги не найдены. Добавьте первую услугу!"></app-empty-state>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<!-- ========================================================= -->
+<!-- ДИАЛОГ: СОЗДАНИЕ/РЕДАКТИРОВАНИЕ УСЛУГИ -->
+<!-- ========================================================= -->
+<p-dialog
+  [visible]="displayDialog()"
+  (visibleChange)="displayDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  [header]="isEditMode() ? 'Редактирование услуги' : 'Новая услуга'"
+  [closable]="true">
+
+  <div class="service-form">
+    <div class="field">
+      <label for="hotelId">Отель *</label>
+      <p-dropdown
+        inputId="hotelId"
+        [options]="hotels()"
+        [(ngModel)]="serviceForm.hotelId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите отель"
+        styleClass="w-full">
+      </p-dropdown>
+    </div>
+
+    <div class="field">
+      <label for="name">Название *</label>
+      <input
+        id="name"
+        type="text"
+        pInputText
+        [(ngModel)]="serviceForm.name"
+        placeholder="Например: Трансфер из аэропорта"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="description">Описание</label>
+      <input
+        id="description"
+        type="text"
+        pInputText
+        [(ngModel)]="serviceForm.description"
+        placeholder="Краткое описание услуги"
+        class="w-full" />
+    </div>
+
+    <div class="field">
+      <label for="price">Цена *</label>
+      <p-inputNumber
+        inputId="price"
+        [(ngModel)]="serviceForm.price"
+        [min]="0"
+        [showButtons]="true"
+        styleClass="w-full">
+      </p-inputNumber>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Отмена"
+      severity="secondary"
+      (click)="closeDialog()">
+    </button>
+    <button
+      pButton
+      type="button"
+      label="Сохранить"
+      icon="pi pi-check"
+      [loading]="isSaving()"
+      (click)="saveService()">
+    </button>
+  </ng-template>
+</p-dialog>

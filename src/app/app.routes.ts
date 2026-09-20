@@ -37,6 +37,34 @@ export const routes: Routes = [
             .then(m => m.RoomsComponent)
       },
       {
+        path: 'room-types',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
+        loadComponent: () =>
+          import('./features/room-types/room-types.component')
+            .then(m => m.RoomTypesComponent)
+      },
+      {
+        path: 'additional-services',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
+        loadComponent: () =>
+          import('./features/additional-services/additional-services.component')
+            .then(m => m.AdditionalServicesComponent)
+      },
+      {
+        path: 'rate-plans',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
+        loadComponent: () =>
+          import('./features/rate-plans/rate-plans.component')
+            .then(m => m.RatePlansComponent)
+      },
+      {
+        path: 'employees',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
+        loadComponent: () =>
+          import('./features/employees/employees.component')
+            .then(m => m.EmployeesComponent)
+      },
+      {
         path: 'reservations/booking-board',
         loadComponent: () =>
           import('./features/booking-board/booking-board.component')
@@ -60,6 +88,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/reports/reports.component')
             .then(m => m.ReportsComponent)
+      },
+      {
+        path: 'users',
+        canActivate: [roleGuard(['ADMIN'])],
+        loadComponent: () =>
+          import('./features/users/users.component')
+            .then(m => m.UsersComponent)
       }
     ]
   },

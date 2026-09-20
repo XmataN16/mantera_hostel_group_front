@@ -7,6 +7,9 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { HotelService } from './hotel.service';
 import { HotelDto, HotelCreateRequest } from '../../shared/models/hotel.model';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 
 @Component({
   selector: 'app-hotels',
@@ -17,7 +20,10 @@ import { HotelDto, HotelCreateRequest } from '../../shared/models/hotel.model';
     TableModule,
     DialogModule,
     ButtonModule,
-    InputTextModule
+    InputTextModule,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+    EmptyStateComponent
   ],
   templateUrl: './hotels.component.html',
   styleUrl: './hotels.component.scss'
@@ -25,12 +31,10 @@ import { HotelDto, HotelCreateRequest } from '../../shared/models/hotel.model';
 export class HotelsComponent implements OnInit {
   private hotelService = inject(HotelService);
 
-  // Сигналы для реактивного состояния
   hotels = signal<HotelDto[]>([]);
   displayDialog = signal(false);
   isLoading = signal(false);
 
-  // Модель для формы создания
   newHotel: HotelCreateRequest = {
     name: '',
     shortName: '',
@@ -64,7 +68,7 @@ export class HotelsComponent implements OnInit {
       next: () => {
         this.displayDialog.set(false);
         this.resetForm();
-        this.loadHotels(); // Перезагружаем таблицу
+        this.loadHotels();
       },
       error: (err) => {
         alert('Ошибка сохранения: ' + (err.error?.message || 'Неизвестная ошибка'));
@@ -74,7 +78,20 @@ export class HotelsComponent implements OnInit {
 
   resetForm() {
     this.newHotel = {
-      name: '', shortName: '', address: '', phone: '', email: '', timezone: 'Europe/Moscow'
+      name: '',
+      shortName: '',
+      address: '',
+      phone: '',
+      email: '',
+      timezone: 'Europe/Moscow'
     };
+  }
+
+  getHotelStatusSeverity(status: string): 'success' | 'danger' {
+    return status === 'ACTIVE' ? 'success' : 'danger';
+  }
+
+  getHotelStatusLabel(status: string): string {
+    return status === 'ACTIVE' ? 'Активен' : 'Неактивен';
   }
 }

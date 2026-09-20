@@ -18,7 +18,6 @@ export class AuthService {
   isAuthenticated = computed(() => !!this.token());
   currentUser = computed(() => this.username());
   userRoles = computed(() => this.roles());
-
   isAdmin = computed(() => this.roles().includes('ADMIN'));
   isManager = computed(() => this.roles().includes('MANAGER') || this.isAdmin());
   isReceptionist = computed(() => this.roles().includes('RECEPTIONIST') || this.isManager());
@@ -26,6 +25,7 @@ export class AuthService {
   login(request: LoginRequest): Observable<JwtLoginResponse> {
     return this.http.post<JwtLoginResponse>(`${this.apiUrl}/login`, request).pipe(
       tap(response => {
+        // ВАЖНО: используем response.accessToken, а не response.token
         localStorage.setItem('access_token', response.accessToken);
         localStorage.setItem('username', response.username);
         localStorage.setItem('roles', JSON.stringify(response.roles));
@@ -41,7 +41,6 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('username');
     localStorage.removeItem('roles');
-
     this.token.set(null);
     this.username.set(null);
     this.roles.set([]);
