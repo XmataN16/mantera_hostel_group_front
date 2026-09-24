@@ -40,7 +40,7 @@ interface AvailableRoomOption extends AvailabilityRoomResponse {
       [visible]="visible"
       (visibleChange)="visibleChange.emit($event)"
       [modal]="true"
-      [style]="{ width: '720px' }"
+      [style]="{ width: '720px', height: '80%' }"
       header="Новое бронирование"
       [closable]="true">
 
