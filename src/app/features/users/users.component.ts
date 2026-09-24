@@ -127,13 +127,22 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  toggleUserStatus(user: UserAccountResponse): void {
-    const newStatus = !user.enabled;
+toggleUserStatus(user: UserAccountResponse): void {
+    const newStatus = user.enabled; 
+
     this.userService.toggleEnabled(user.id, newStatus).subscribe({
-      next: () => this.loadData(),
-      error: (err) => alert('Ошибка: ' + this.getErrorMessage(err))
+        next: () => {
+            const updatedUsers = this.users().map(u => 
+                u.id === user.id ? { ...u, enabled: newStatus } : u
+            );
+            this.users.set(updatedUsers);
+        },
+        error: (err) => {
+            user.enabled = !newStatus; 
+            alert('Ошибка: ' + this.getErrorMessage(err));
+        }
     });
-  }
+}
 
   openPasswordDialog(user: UserAccountResponse): void {
     this.selectedUserForPassword.set(user);
