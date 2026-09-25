@@ -3,18 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, JwtLoginResponse, CurrentUserResponse } from '../../shared/models/auth.model';
+import { StorageCache } from '../utils/storage-cache.util';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/auth`;
 
-  // Signals для реактивного состояния
   private token = signal<string | null>(localStorage.getItem('access_token'));
   private username = signal<string | null>(localStorage.getItem('username'));
   private roles = signal<string[]>(JSON.parse(localStorage.getItem('roles') || '[]'));
 
-  // Computed signals для проверки прав
   isAuthenticated = computed(() => !!this.token());
   currentUser = computed(() => this.username());
   userRoles = computed(() => this.roles());
@@ -25,11 +24,9 @@ export class AuthService {
   login(request: LoginRequest): Observable<JwtLoginResponse> {
     return this.http.post<JwtLoginResponse>(`${this.apiUrl}/login`, request).pipe(
       tap(response => {
-        // ВАЖНО: используем response.accessToken, а не response.token
         localStorage.setItem('access_token', response.accessToken);
         localStorage.setItem('username', response.username);
         localStorage.setItem('roles', JSON.stringify(response.roles));
-
         this.token.set(response.accessToken);
         this.username.set(response.username);
         this.roles.set(response.roles);
@@ -41,6 +38,10 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('username');
     localStorage.removeItem('roles');
+    
+    // Очищаем весь кэш при выходе
+    StorageCache.clearAll();
+
     this.token.set(null);
     this.username.set(null);
     this.roles.set([]);

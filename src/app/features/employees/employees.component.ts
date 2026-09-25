@@ -69,10 +69,12 @@ export class EmployeesComponent implements OnInit {
     });
   }
 
-  loadEmployees(): void {
+  loadEmployees(forceReload: boolean = false): void {
     const hotelId = this.selectedHotelId();
     this.isLoading.set(true);
-    this.service.getAll(hotelId || undefined).subscribe({
+    
+    // Передаем forceReload в сервис
+    this.service.getAll(hotelId || undefined, forceReload).subscribe({
       next: employees => {
         this.employees.set(employees);
         this.isLoading.set(false);
@@ -131,6 +133,7 @@ export class EmployeesComponent implements OnInit {
     if (this.isEditMode()) {
       const id = this.selectedEmployeeId();
       if (!id) return;
+
       this.service.update(id, {
         fullName: this.employeeForm.fullName,
         position: this.employeeForm.position,
@@ -138,10 +141,14 @@ export class EmployeesComponent implements OnInit {
         email: this.employeeForm.email,
         status: 'ACTIVE'
       }).subscribe({
-        next: () => {
+        next: (updatedEmployee) => { // <-- Получаем обновленного сотрудника
           this.isSaving.set(false);
           this.displayDialog.set(false);
-          this.loadEmployees();
+          
+          // Синхронизируем фильтр с отелем сотрудника
+          this.selectedHotelId.set(updatedEmployee.hotelId);
+          // Принудительно перезагружаем список, минуя кэш
+          this.loadEmployees(true); 
         },
         error: err => {
           this.isSaving.set(false);
@@ -149,11 +156,19 @@ export class EmployeesComponent implements OnInit {
         }
       });
     } else {
+      // === БЛОК СОЗДАНИЯ (CREATE) ===
       this.service.create(this.employeeForm).subscribe({
-        next: () => {
+        next: (newEmployee) => { // <-- 1. Получаем созданного сотрудника из ответа бэкенда
           this.isSaving.set(false);
           this.displayDialog.set(false);
-          this.loadEmployees();
+          
+          // 2. Переключаем фильтр таблицы на отель, в который добавили сотрудника.
+          // Это гарантирует, что пользователь сразу увидит новую запись.
+          this.selectedHotelId.set(newEmployee.hotelId);
+          
+          // 3. Принудительно перезагружаем список (forceReload = true), 
+          // чтобы гарантированно обойти localStorage кэш и сделать свежий запрос.
+          this.loadEmployees(true); 
         },
         error: err => {
           this.isSaving.set(false);
