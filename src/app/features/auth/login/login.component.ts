@@ -18,7 +18,7 @@ import { LoginFormComponent, LoginFormCredentials } from '../../../shared/compon
         <div class="login-container">
           <app-login-form
             [title]="'Вход в Mantera PMS'"
-            [subtitle]="'Система управления хостелами'"
+            [subtitle]="'Система управления отелями'"
             [showDemoCredentials]="false"
             [isLoading]="isLoading"
             [errorMessage]="errorMessage"
