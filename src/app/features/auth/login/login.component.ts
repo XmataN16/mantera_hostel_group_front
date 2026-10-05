@@ -19,7 +19,7 @@ import { LoginFormComponent, LoginFormCredentials } from '../../../shared/compon
           <app-login-form
             [title]="'Вход в Mantera PMS'"
             [subtitle]="'Система управления хостелами'"
-            [showDemoCredentials]="true"
+            [showDemoCredentials]="false"
             [isLoading]="isLoading"
             [errorMessage]="errorMessage"
             [credentials]="credentials"
